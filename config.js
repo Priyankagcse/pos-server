@@ -15,6 +15,8 @@ const DBUser = 'root';
 const DBPassword = 'Welcome@123';
 const DBName = 'testing';
 
+console.log(DBHost + DBUser + DBPassword + DBName);
+
 const db = mysql.createPool({
     connectionLimit: 10,
     host: DBHost,

@@ -4,6 +4,14 @@ const { app, db } = require('./config');
 //     res.send('Welcome');
 // });
 
+db.connect((err) => {
+    if (err) {
+      console.error('Error connecting to MySQL server:', err);
+      return;
+    }
+    console.log('Connected to MySQL server');
+});
+
 app.get("/userlist", (req, res) => {
     const sqlInsert = `select * from userlist`;
     db.query(sqlInsert, (err, result) => {
