@@ -4,13 +4,20 @@ const { app, db } = require('./config');
 //     res.send('Welcome');
 // });
 
-db.getConnection((err) => {
-    if (err) {
-      console.error('Error connecting to MySQL server:', err);
-      return;
-    }
-    console.log('Connected to MySQL server');
-});
+// let userUuid = '';
+
+function tableSpRefresh() {
+    const spRefresh = require('./sp-index');
+    spRefresh(null, () => {
+        const tableRefresh = require('./table-index');
+        tableRefresh(null);
+    });
+}
+tableSpRefresh();
+
+// function isNullOrUndefinedOrEmpty(value) {
+//     return value === undefined || value === null || value === '';
+// }
 
 app.get("/userlist", (req, res) => {
     const sqlInsert = `select * from userlist`;
@@ -23,10 +30,10 @@ app.get("/userlist", (req, res) => {
     });
 });
 
-// app.listen(process.env.PORT, () => {
-//     console.log('Running on port 3002');
-// });
-
-app.listen(3002, () => {
+app.listen(process.env.PORT, () => {
     console.log('Running on port 3002');
 });
+
+// app.listen(3002, () => {
+//     console.log('Running on port 3002');
+// });

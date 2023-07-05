@@ -5,17 +5,15 @@ const app = express();
 const mysql = require('mysql');
 const {v4: uuidv4} = require('uuid');
 
-// const DBHost = process.env.DBHost;
-// const DBUser = process.env.DBUser;
-// const DBPassword = process.env.DBPassword;
-// const DBName = process.env.DBName;
+const DBHost = process.env.DBHost;
+const DBUser = process.env.DBUser;
+const DBPassword = process.env.DBPassword;
+const DBName = process.env.DBName;
 
-const DBHost = 'localhost';
-const DBUser = 'root';
-const DBPassword = 'Welcome@123';
-const DBName = 'pos';
-
-console.log(DBHost + DBUser + DBPassword + DBName);
+// const DBHost = 'localhost';
+// const DBUser = 'root';
+// const DBPassword = 'Welcome@123';
+// const DBName = 'pos';
 
 const db = mysql.createPool({
     connectionLimit: 10,

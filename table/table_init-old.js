@@ -31,14 +31,12 @@ class table_refresh {
                                     modifyListStr = modifyListStr.replace(/.$/,"");
                                     if (fieldListStr) {
                                         const sqlAlter = `ALTER TABLE ${table.name} ADD (${fieldListStr})`;
-                                        console.log(sqlAlter);
                                         await db.query(sqlAlter, async(alterErr, alterResult) => {
                                             if (alterErr) {
                                                 // console.log(`${sqlAlter} ${alterErr.sqlMessage}`);
                                             } else {
                                                 if (modifyListStr) {
                                                     const sqlModify = `ALTER TABLE ${table.name} ${modifyListStr}`;
-                                                    console.log(sqlModify);
                                                     await db.query(sqlModify, (modifyErr, modifyResult) => {
                                                         if (modifyErr) {
                                                             // console.log(`${sqlModify} ${modifyErr.sqlMessage}`);
@@ -52,7 +50,6 @@ class table_refresh {
                                     } else {
                                         if (modifyListStr) {
                                             const sqlModify = `ALTER TABLE ${table.name} ${modifyListStr}`;
-                                            console.log(sqlModify);
                                             await db.query(sqlModify, (modifyErr, modifyResult) => {
                                                 if (modifyErr) {
                                                     // console.log(`${sqlModify} ${modifyErr.sqlMessage}`);
@@ -74,7 +71,6 @@ class table_refresh {
                                 queryFormat += `, ${table.query}`;
                             }
                             const sqlCreate = `CREATE TABLE ${table.name} (${queryFormat});`;
-                            console.log(sqlCreate);
                             await db.query(sqlCreate, (createErr, createResult) => {
                                 if (createErr) {
                                     // console.log('Create ' + createErr.sqlMessage);
