@@ -4,7 +4,7 @@ const { app, db } = require('./config');
 //     res.send('Welcome');
 // });
 
-db.connect((err) => {
+db.getConnection((err) => {
     if (err) {
       console.error('Error connecting to MySQL server:', err);
       return;
@@ -23,10 +23,10 @@ app.get("/userlist", (req, res) => {
     });
 });
 
-app.listen(process.env.PORT, () => {
-    console.log('Running on port 3002');
-});
-
-// app.listen(3002, () => {
+// app.listen(process.env.PORT, () => {
 //     console.log('Running on port 3002');
 // });
+
+app.listen(3002, () => {
+    console.log('Running on port 3002');
+});

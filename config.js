@@ -10,10 +10,10 @@ const {v4: uuidv4} = require('uuid');
 // const DBPassword = process.env.DBPassword;
 // const DBName = process.env.DBName;
 
-const DBHost = '127.0.0.1';
+const DBHost = 'localhost';
 const DBUser = 'root';
 const DBPassword = 'Welcome@123';
-const DBName = 'testing';
+const DBName = 'pos';
 
 console.log(DBHost + DBUser + DBPassword + DBName);
 
