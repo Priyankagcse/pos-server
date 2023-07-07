@@ -1,14 +1,14 @@
-const GETUSERLIST = {
-    name: 'GETUSERLIST',
-    query: `CREATE PROCEDURE getuserlist(userUuid varchar(50))
+const INITIALREFRESH = {
+    name: 'INITIALREFRESH',
+    query: `CREATE PROCEDURE initialRefresh(userUuid varchar(50))
             BEGIN
-                SELECT * from userlist;
+                SELECT * FROM userlist;
                 SELECT * FROM menulist WHERE isActive = 1 order by orderNo asc;
             END`
 }
 
 const all_store_procedure = [
-    GETUSERLIST
+    INITIALREFRESH
 ]
 
 module.exports = all_store_procedure
