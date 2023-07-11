@@ -53,9 +53,9 @@ app.get("/versionRefresh/:version/:userUuid", (parentReq, parentRes) => {
 });
 
 app.get("/getUser/:userUuid", (req, res) => {
-    const uuid = uuidv4();
     userUuid = req.params.userUuid;
-    const sqlInsert = `SELECT * from userlist u where u.uuid = '${userUuid}'`;
+    companyUuid = req.params.companyUuid;
+    const sqlInsert = `SELECT * from userlist u where u.uuid = '${userUuid}' and u.companyUuid = '${companyUuid}'`;
     db.query(sqlInsert, (err, result) => {
         if (err) {
             res.status(400).send({ message: err.sqlMessage });
@@ -82,8 +82,8 @@ app.put("/user", (req, res) => {
     const uuid = req.body.uuid;
     const password = req.body.password;
     const lastModifiedOn = req.body.lastModifiedOn;
-    const sqlInsert = "UPDATE userlist SET password = ?, lastModifiedOn = ? WHERE uuid = ?";
-    db.query(sqlInsert, [password, lastModifiedOn, uuid], (err, result) => {
+    const sqlInsert = "UPDATE userlist SET password = ?, lastModifiedOn = ? WHERE uuid = ? and companyUuid = ?";
+    db.query(sqlInsert, [password, lastModifiedOn, uuid, companyUuid], (err, result) => {
         if (err) {
             res.status(400).send({ message: err.sqlMessage });
         } else {
@@ -91,6 +91,58 @@ app.put("/user", (req, res) => {
         }
     });
 });
+
+app.get("/product", (req, res) => {
+    const sqlInsert = `SELECT * from product p where p.companyUuid = '${companyUuid}'`;
+    db.query(sqlInsert, (err, result) => {
+        if (err) {
+            res.status(400).send({ message: err.sqlMessage });
+        } else {
+            res.send({ data: result });
+        }
+    });
+});
+
+app.post("/product", (req, res) => {
+    const uuid = uuidv4();
+    const bodyData = {...req.body, uuid: uuid};
+    const sqlInsert = "INSERT INTO product SET ?";
+    db.query(sqlInsert, bodyData, (err, result) => { 
+        if (err) {
+            res.status(400).send({ message: err.sqlMessage });
+        } else {
+            res.send({ data: bodyData });
+        }
+    });
+});
+
+app.put("/product", (req, res) => {
+    const lastModifiedOn = req.body.lastModifiedOn;
+    const uuid = req.body.uuid;
+    const companyUuid = req.body.companyUuid;
+    const sqlInsert = "UPDATE product SET productName = ?, productDescription = ?, partNumber = ?, gst = ?, price = ?, lastModifiedOn = ? WHERE uuid = ? and companyUuid = ?";
+    db.query(sqlInsert, [productName, productDescription, partNumber, gst, price, lastModifiedOn, uuid, companyUuid], (err, result) => {
+        if (err) {
+            res.status(400).send({ message: err.sqlMessage });
+        } else {
+            res.send({ data: req.body });
+        }
+    });
+});
+
+app.delete("/product", (req, res) => {
+    const productUuid = req.body.uuid;
+    const sqlInsert = "DELETE FROM product where uuid = ? and companyUuid = ?";
+    db.query(sqlInsert, [productUuid, companyUuid], (err, result) => {
+        if (err) {
+            res.status(400).send({ message: err.sqlMessage });
+        } else {
+            res.send({ data: req.body });
+        }
+    });
+});
+
+
 
 app.listen(process.env.PORT, () => {
     console.log('Running on port 3002');
