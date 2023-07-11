@@ -1,4 +1,5 @@
 const { initialRefresh } = require('./common');
+const { isNullOrUndefinedOrEmpty } = require('./common-fn');
 const { app, db, uuidv4 } = require('./config');
 
 // app.get("/", (req, res) => {
@@ -16,10 +17,6 @@ function tableSpRefresh() {
     });
 }
 tableSpRefresh();
-
-function isNullOrUndefinedOrEmpty(value) {
-    return value === undefined || value === null || value === '';
-}
 
 app.get("/versionRefresh/:version/:userUuid", (parentReq, parentRes) => {
     const parentInsert = `SELECT * FROM versionupdate`;
