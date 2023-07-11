@@ -6,6 +6,7 @@ const { app, db, uuidv4 } = require('./config');
 // });
 
 let userUuid = '';
+let companyUuid = '';
 
 function tableSpRefresh() {
     const spRefresh = require('./sp-index');
@@ -52,7 +53,7 @@ app.get("/versionRefresh/:version/:userUuid", (parentReq, parentRes) => {
     });
 });
 
-app.get("/getUser/:userUuid", (req, res) => {
+app.get("/getUser/:userUuid/:companyUuid", (req, res) => {
     userUuid = req.params.userUuid;
     companyUuid = req.params.companyUuid;
     const sqlInsert = `SELECT * from userlist u where u.uuid = '${userUuid}' and u.companyUuid = '${companyUuid}'`;
@@ -60,7 +61,7 @@ app.get("/getUser/:userUuid", (req, res) => {
         if (err) {
             res.status(400).send({ message: err.sqlMessage });
         } else {
-            res.send({ data: result[0][0], spentType: result[1], transferType: result[2] });
+            res.send({ data: result });
         }
     });
 });
@@ -82,6 +83,7 @@ app.put("/user", (req, res) => {
     const uuid = req.body.uuid;
     const password = req.body.password;
     const lastModifiedOn = req.body.lastModifiedOn;
+    const companyUuid = req.body.companyUuid;
     const sqlInsert = "UPDATE userlist SET password = ?, lastModifiedOn = ? WHERE uuid = ? and companyUuid = ?";
     db.query(sqlInsert, [password, lastModifiedOn, uuid, companyUuid], (err, result) => {
         if (err) {
