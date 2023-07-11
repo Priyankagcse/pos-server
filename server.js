@@ -61,7 +61,7 @@ app.get("/getUser/:userUuid/:companyUuid", (req, res) => {
         if (err) {
             res.status(400).send({ message: err.sqlMessage });
         } else {
-            res.send({ data: result });
+            res.send({ data: result[0] });
         }
     });
 });
@@ -143,13 +143,3 @@ app.delete("/product", (req, res) => {
         }
     });
 });
-
-
-
-app.listen(process.env.PORT, () => {
-    console.log('Running on port 3002');
-});
-
-// app.listen(3002, () => {
-//     console.log('Running on port 3002');
-// });

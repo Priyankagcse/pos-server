@@ -27,4 +27,12 @@ app.use(cors());
 app.use(express.json());
 app.use(bodyParser.urlencoded({extended: true}));
 
+app.listen(process.env.PORT, () => {
+    console.log('Running on port 3002');
+});
+
+// app.listen(3002, () => {
+//     console.log('Running on port 3002');
+// });
+
 module.exports = { app, uuidv4, db, DBHost, DBUser, DBPassword, DBName };
