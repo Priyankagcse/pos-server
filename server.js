@@ -111,8 +111,8 @@ app.post("/product", (req, res) => {
 
 app.put("/product", (req, res) => {
     const putObj = req.body;
-    const sqlInsert = "UPDATE product SET productName = ?, productDescription = ?, partNumber = ?, gst = ?, price = ?, lastModifiedOn = ? WHERE uuid = ? and companyUuid = ?";
-    db.query(sqlInsert, [putObj.productName, putObj.productDescription, putObj.partNumber, putObj.gst, putObj.price, putObj.lastModifiedOn, putObj.uuid, putObj.companyUuid], (err, result) => {
+    const sqlInsert = "UPDATE product SET productName = ?, productDescription = ?, partNumber = ?, gst = ?, price = ?, lastModifiedOn = ?, lastModifiedBy = ? WHERE uuid = ? and companyUuid = ?";
+    db.query(sqlInsert, [putObj.productName, putObj.productDescription, putObj.partNumber, putObj.gst, putObj.price, putObj.lastModifiedOn, putObj.lastModifiedBy, putObj.uuid, putObj.companyUuid], (err, result) => {
         if (err) {
             res.status(400).send({ message: err.sqlMessage });
         } else {
