@@ -66,7 +66,6 @@ const product = {
     queryList: [
         {field: 'uuid', type: 'varchar(50)', null: 'NOT NULL'},
         {field: 'companyUuid', type: 'varchar(50)', null: 'NOT NULL'},
-        {field: 'serialNo', type: 'bigint(20)', null: 'NOT NULL'},
         {field: 'productName', type: 'varchar(100)', null: 'NOT NULL'},
         {field: 'productDescription', type: 'varchar(150)', null: 'DEFAULT NULL'},
         {field: 'partNumber', type: 'varchar(100)', null: 'NOT NULL'},
