@@ -74,7 +74,27 @@ const product = {
         {field: 'createdOn', type: 'datetime', null: 'NOT NULL'},
         {field: 'createdBy', type: 'varchar(50)', null: 'DEFAULT NULL'},
         {field: 'lastModifiedOn', type: 'datetime', null: 'DEFAULT NULL'},
+        {field: 'lastModifiedBy', type: 'varchar(50)', null: 'DEFAULT NULL'},
+        {field: 'uom', type: 'varchar(50)', null: 'DEFAULT NULL'}
+    ]   
+}
+
+const stock = {
+    name: 'stock',
+    query: `PRIMARY KEY (uuid)`,
+    queryList: [
+        {field: 'uuid', type: 'varchar(50)', null: 'NOT NULL'},
+        {field: 'userUuid', type: 'varchar(50)', null: 'NOT NULL'},
+        {field: 'companyUuid', type: 'varchar(50)', null: 'NOT NULL'},
+        {field: 'productUuid', type: 'varchar(50)', null: 'NOT NULL'},
+        {field: 'uom', type: 'varchar(50)', null: 'DEFAULT NULL'},
+        {field: 'stock', type: 'DECIMAL(16,2)', null: 'NOT NULL'},
+        {field: 'isActive', type: 'boolean', null: 'DEFAULT NULL'},
+        {field: 'createdOn', type: 'datetime', null: 'NOT NULL'},
+        {field: 'createdBy', type: 'varchar(50)', null: 'DEFAULT NULL'},
+        {field: 'lastModifiedOn', type: 'datetime', null: 'DEFAULT NULL'},
         {field: 'lastModifiedBy', type: 'varchar(50)', null: 'DEFAULT NULL'}
+        
     ]   
 }
 
@@ -83,7 +103,8 @@ const all_tables = [
     userlist,
     versionupdate,
     company,
-    product
+    product,
+    stock
 ]
 
 module.exports = all_tables

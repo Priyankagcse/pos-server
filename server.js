@@ -132,3 +132,64 @@ app.delete("/product", (req, res) => {
         }
     });
 });
+
+app.get("/productSearch/:companyUuid/:productName", (req, res) => {
+    let reqParams = req.params;
+    const sqlInsert = `SELECT * from product p where p.companyUuid = '${reqParams.companyUuid}' and p.productName like '%${reqParams.productName}%' order by createdOn desc`;
+    db.query(sqlInsert, (err, result) => {
+        if (err) {
+            res.status(400).send({ message: err.sqlMessage });
+        } else {
+            res.send({ data: result });
+        }
+    });
+});
+
+app.get("/stock/:companyUuid", (req, res) => {
+    let reqParams = req.params;
+    const sqlInsert = `SELECT * from stock p where p.companyUuid = '${reqParams.companyUuid}' order by createdOn desc`;
+    db.query(sqlInsert, (err, result) => {
+        if (err) {
+            res.status(400).send({ message: err.sqlMessage });
+        } else {
+            res.send({ data: result });
+        }
+    });
+});
+
+app.post("/stock", (req, res) => {
+    const uuid = uuidv4();
+    const bodyData = {...req.body, uuid: uuid};
+    const sqlInsert = "INSERT INTO stock SET ?";
+    db.query(sqlInsert, bodyData, (err, result) => { 
+        if (err) {
+            res.status(400).send({ message: err.sqlMessage });
+        } else {
+            res.send({ data: bodyData });
+        }
+    });
+});
+
+app.put("/stock", (req, res) => {
+    const putObj = req.body;
+    const sqlInsert = "UPDATE stock SET stock = ?, lastModifiedOn = ?, lastModifiedBy = ? WHERE uuid = ? and companyUuid = ?";
+    db.query(sqlInsert, [putObj.stock, putObj.lastModifiedOn, putObj.lastModifiedBy, putObj.uuid, putObj.companyUuid], (err, result) => {
+        if (err) {
+            res.status(400).send({ message: err.sqlMessage });
+        } else {
+            res.send({ data: req.body });
+        }
+    });
+});
+
+app.delete("/stock", (req, res) => {
+    const putObj = req.body;
+    const sqlInsert = "DELETE FROM stock where uuid = ? and companyUuid = ?";
+    db.query(sqlInsert, [putObj.productUuid, putObj.companyUuid], (err, result) => {
+        if (err) {
+            res.status(400).send({ message: err.sqlMessage });
+        } else {
+            res.send({ data: req.body });
+        }
+    });
+});
