@@ -147,7 +147,7 @@ app.get("/productSearch/:companyUuid/:productName", (req, res) => {
 
 app.get("/stock/:companyUuid", (req, res) => {
     let reqParams = req.params;
-    const sqlInsert = `SELECT * from stock p where p.companyUuid = '${reqParams.companyUuid}' order by createdOn desc`;
+    const sqlInsert = `SELECT s.*, p.productName, p.productDescription, p.partNumber, p.gst, p.price from stock s join product p on s.companyUuid = p.companyUuid where p.companyUuid = '${reqParams.companyUuid}' order by s. createdOn desc`;
     db.query(sqlInsert, (err, result) => {
         if (err) {
             res.status(400).send({ message: err.sqlMessage });
@@ -190,6 +190,18 @@ app.delete("/stock", (req, res) => {
             res.status(400).send({ message: err.sqlMessage });
         } else {
             res.send({ data: req.body });
+        }
+    });
+});
+
+app.put("/stockBulkInsert", (req, res) => {
+    const putObj = req.body;
+    const sqlInsert = `CALL stockBulkInsert('${JSON.stringify(putObj)}')`;
+    db.query(sqlInsert, (err, result) => {
+        if (err) {
+            res.status(400).send({ message: err.sqlMessage });
+        } else {
+            res.send({ data: result });
         }
     });
 });

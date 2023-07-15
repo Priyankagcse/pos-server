@@ -7,8 +7,56 @@ const INITIALREFRESH = {
             END`
 }
 
+const STOCKBULKINSERT = {
+    name: 'STOCKBULKINSERT',
+    query: `CREATE PROCEDURE stockBulkInsert(IN stockObj JSON)
+            BEGIN
+                DECLARE createdOnDatetime DATETIME;
+                DECLARE createdOnValue VARCHAR(50);
+                
+                DECLARE lastModifiedOnDateTime DATETIME;
+                DECLARE lastModifiedOnValue VARCHAR(50);
+                
+                DECLARE i int DEFAULT 0;
+                
+                DECLARE stockList JSON DEFAULT (JSON_EXTRACT(stockObj, '$.stockList'));
+                DECLARE stockLength INT DEFAULT JSON_LENGTH(stockList);
+                
+                WHILE i < stockLength DO
+                
+                    SET @uuid = (select uuid());
+                    
+                    SET lastModifiedOnValue = JSON_UNQUOTE(JSON_EXTRACT(stockList, CONCAT('$[', i, '].lastModifiedOn')));        
+                    IF DATE(lastModifiedOnValue) IS NOT NULL THEN
+                        SET lastModifiedOnDateTime = STR_TO_DATE(lastModifiedOnValue, '%Y-%m-%dT%H:%i:%s.000Z');
+                    ELSE
+                        SET lastModifiedOnDateTime = NULL;
+                    END IF;
+                    
+                    SET createdOnValue = JSON_UNQUOTE(JSON_EXTRACT(stockList, CONCAT('$[', i, '].createdOn')));
+                    IF DATE(createdOnValue) IS NOT NULL THEN
+                        SET createdOnDatetime = STR_TO_DATE(createdOnValue, '%Y-%m-%dT%H:%i:%s.000Z');
+                    ELSE
+                        SET createdOnDatetime = NULL;
+                    END IF;
+                    
+                    INSERT INTO stock (uuid, userUuid, companyUuid, productUuid, uom, stock, isActive, createdOn, createdBy, lastModifiedOn, lastModifiedBy)
+                        VALUES (@uuid, JSON_EXTRACT(stockObj, '$.userUuid'), JSON_EXTRACT(stockObj, '$.companyUuid'),
+                            JSON_UNQUOTE(JSON_EXTRACT(stockList, CONCAT('$[', i, '].uuid'))),
+                            JSON_UNQUOTE(JSON_EXTRACT(stockList, CONCAT('$[', i, '].uom'))), JSON_UNQUOTE(JSON_EXTRACT(stockList, CONCAT('$[', i, '].stock'))),
+                            1, createdOnDatetime,
+                            JSON_UNQUOTE(JSON_EXTRACT(stockList, CONCAT('$[', i, '].createdBy'))),
+                            lastModifiedOnDateTime,
+                            JSON_UNQUOTE(JSON_EXTRACT(stockList, CONCAT('$[', i, '].lastModifiedBy'))));      
+                    
+                    SET i = i + 1;
+                END WHILE;
+            END`
+}
+
 const all_store_procedure = [
-    INITIALREFRESH
+    INITIALREFRESH,
+    STOCKBULKINSERT
 ]
 
 module.exports = all_store_procedure
