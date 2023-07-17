@@ -135,7 +135,7 @@ app.delete("/product", (req, res) => {
 
 app.get("/productSearch/:companyUuid/:productName", (req, res) => {
     let reqParams = req.params;
-    const sqlInsert = `SELECT * from product p where p.companyUuid = '${reqParams.companyUuid}' and p.productName like '%${reqParams.productName}%' order by createdOn desc`;
+    const sqlInsert = `SELECT * from product p where p.companyUuid = '${reqParams.companyUuid}' and p.productName like '%${reqParams.productName}%' OR p.partNumber like '%${reqParams.productName}%' order by createdOn desc`;
     db.query(sqlInsert, (err, result) => {
         if (err) {
             res.status(400).send({ message: err.sqlMessage });
@@ -147,7 +147,7 @@ app.get("/productSearch/:companyUuid/:productName", (req, res) => {
 
 app.get("/stock/:companyUuid", (req, res) => {
     let reqParams = req.params;
-    const sqlInsert = `SELECT s.*, p.productName, p.productDescription, p.partNumber, p.gst, p.price from stock s join product p on s.companyUuid = p.companyUuid where p.companyUuid = '${reqParams.companyUuid}' order by s. createdOn desc`;
+    const sqlInsert = `SELECT s.*, p.productName, p.productDescription, p.partNumber, p.gst, p.price from stock s join product p on s.companyUuid = p.companyUuid and s.productUuid = p.uuid where p.companyUuid = '${reqParams.companyUuid}' order by s. createdOn desc`;
     db.query(sqlInsert, (err, result) => {
         if (err) {
             res.status(400).send({ message: err.sqlMessage });

@@ -6,7 +6,7 @@ function initialRefresh(parentRes, userUuid) {
         if (err) {
             parentRes.status(400).send({ message: err.sqlMessage });
         } else {
-            parentRes.send({ userList: result[0], menuList: result[1] });
+            parentRes.send({ userList: result[0], menuList: result[1], companyData: result[2] });
         }
     });
 }

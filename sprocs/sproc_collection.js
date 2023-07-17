@@ -4,6 +4,7 @@ const INITIALREFRESH = {
             BEGIN
                 SELECT * FROM userlist;
                 SELECT * FROM menulist WHERE isActive = 1 order by orderNo asc;
+                SELECT * FROM company;
             END`
 }
 
@@ -41,7 +42,7 @@ const STOCKBULKINSERT = {
                     END IF;
                     
                     INSERT INTO stock (uuid, userUuid, companyUuid, productUuid, uom, stock, isActive, createdOn, createdBy, lastModifiedOn, lastModifiedBy)
-                        VALUES (@uuid, JSON_EXTRACT(stockObj, '$.userUuid'), JSON_EXTRACT(stockObj, '$.companyUuid'),
+                        VALUES (@uuid, JSON_UNQUOTE(JSON_EXTRACT(stockObj, '$.userUuid')), JSON_UNQUOTE(JSON_EXTRACT(stockObj, '$.companyUuid')),
                             JSON_UNQUOTE(JSON_EXTRACT(stockList, CONCAT('$[', i, '].uuid'))),
                             JSON_UNQUOTE(JSON_EXTRACT(stockList, CONCAT('$[', i, '].uom'))), JSON_UNQUOTE(JSON_EXTRACT(stockList, CONCAT('$[', i, '].stock'))),
                             1, createdOnDatetime,
