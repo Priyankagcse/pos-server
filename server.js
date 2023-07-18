@@ -96,6 +96,18 @@ app.get("/product/:companyUuid", (req, res) => {
     });
 });
 
+app.put("/getProduct", (req, res) => {
+    const putObj = req.body;
+    const sqlInsert = `CALL getProduct('${JSON.stringify(putObj)}')`;
+    db.query(sqlInsert, (err, result) => {
+        if (err) {
+            res.status(400).send({ message: err.sqlMessage });
+        } else {
+            res.send({ data: result[1], count: result[0][0].count });
+        }
+    });
+});
+
 app.post("/product", (req, res) => {
     const uuid = uuidv4();
     const bodyData = {...req.body, uuid: uuid};

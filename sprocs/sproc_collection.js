@@ -55,9 +55,26 @@ const STOCKBULKINSERT = {
             END`
 }
 
+const GETPRODUCT = {
+    name: 'GETPRODUCT',
+    query: `CREATE PROCEDURE getProduct(IN productObj JSON)
+            BEGIN
+                SET @companyUuid = JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.companyUuid'));
+                SET @startPageLimit = JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.startPageLimit'));
+                SET @endPageLimit = JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.endPageLimit'));    
+                select COUNT(uuid) as count from product;    
+                SET @query = CONCAT('SELECT * FROM product p where p.companyUuid = ? order by createdOn desc LIMIT ', @startPageLimit, ', ', @endPageLimit);
+                PREPARE stmt FROM @query;
+                EXECUTE stmt USING @companyUuid;
+                DEALLOCATE PREPARE stmt;
+            END`
+}
+
+
 const all_store_procedure = [
     INITIALREFRESH,
-    STOCKBULKINSERT
+    STOCKBULKINSERT,
+    GETPRODUCT
 ]
 
 module.exports = all_store_procedure
