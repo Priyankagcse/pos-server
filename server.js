@@ -136,7 +136,7 @@ app.put("/product", (req, res) => {
 app.delete("/product", (req, res) => {
     const putObj = req.body;
     const sqlInsert = "DELETE FROM product where uuid = ? and companyUuid = ?";
-    db.query(sqlInsert, [putObj.productUuid, putObj.companyUuid], (err, result) => {
+    db.query(sqlInsert, [putObj.uuid, putObj.companyUuid], (err, result) => {
         if (err) {
             res.status(400).send({ message: err.sqlMessage });
         } else {
