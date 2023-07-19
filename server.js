@@ -103,7 +103,7 @@ app.put("/getProduct", (req, res) => {
         if (err) {
             res.status(400).send({ message: err.sqlMessage });
         } else {
-            res.send({ data: result[1], count: result[0][0].count });
+            res.send({ data: result[1], count: result[0][0].count, pagination: result[0][0].pagination });
         }
     });
 });

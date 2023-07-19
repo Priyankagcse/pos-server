@@ -61,9 +61,21 @@ const GETPRODUCT = {
             BEGIN
                 SET @companyUuid = JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.companyUuid'));
                 SET @startPageLimit = JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.startPageLimit'));
-                SET @endPageLimit = JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.endPageLimit'));    
-                select COUNT(uuid) as count from product;    
-                SET @query = CONCAT('SELECT * FROM product p where p.companyUuid = ? order by createdOn desc LIMIT ', @startPageLimit, ', ', @endPageLimit);
+                SET @endPageLimit = JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.endPageLimit'));
+                SET @maxRowLimit = JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.maxRowLimit'));
+                
+                SET @count = (select COUNT(uuid) as count from product);
+                
+                IF @count > @maxRowLimit THEN
+                    SET @pagination = 1;
+                    SET @query = CONCAT('SELECT * FROM product p where p.companyUuid = ? order by createdOn desc LIMIT ', @startPageLimit, ', ', @endPageLimit);
+                ELSE
+                    SET @pagination = 0;
+                    SET @query = CONCAT('SELECT * FROM product p where p.companyUuid = ? order by createdOn desc');
+                END IF;
+                
+                select @count as count, @pagination as pagination;
+                
                 PREPARE stmt FROM @query;
                 EXECUTE stmt USING @companyUuid;
                 DEALLOCATE PREPARE stmt;
