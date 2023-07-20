@@ -63,22 +63,46 @@ const GETPRODUCT = {
                 SET @startPageLimit = JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.startPageLimit'));
                 SET @endPageLimit = JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.endPageLimit'));
                 SET @maxRowLimit = JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.maxRowLimit'));
+                SET @caller = IFNULL(JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.caller')), '');
+                SET @searchText = IFNULL(concat('%', JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.searchText')), '%'), '');
+                SET @sortName = concat(IFNULL(JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.sortColumn')), ''), ' ' , IFNULL(JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.sortDirection')), ''));
                 
-                SET @count = (select COUNT(uuid) as count from product);
+                IF @caller = 'prodSearch' THEN
+                    SET @count = (select COUNT(uuid) as count from product p where p.companyUuid = @companyUuid and (p.productName like @searchText or p.partNumber like @searchText));
+                ELSE
+                    SET @count = (select COUNT(uuid) as count from product p where p.companyUuid = @companyUuid);
+                END IF;
                 
                 IF @count > @maxRowLimit THEN
                     SET @pagination = 1;
-                    SET @query = CONCAT('SELECT * FROM product p where p.companyUuid = ? order by createdOn desc LIMIT ', @startPageLimit, ', ', @endPageLimit);
+                    IF @caller = 'prodSearch' THEN
+                        SET @query = CONCAT('SELECT * FROM product p where p.companyUuid = ? and (p.productName like ? or p.partNumber like ?) order by createdOn desc LIMIT ', @startPageLimit, ', ', @endPageLimit);
+                    ELSEIF @caller = 'sort' THEN
+                        SET @query = CONCAT('SELECT * FROM product p where p.companyUuid = ? order by ? LIMIT ', @startPageLimit, ', ', @endPageLimit);
+                    ELSE
+                        SET @query = CONCAT('SELECT * FROM product p where p.companyUuid = ? order by createdOn desc LIMIT ', @startPageLimit, ', ', @endPageLimit);
+                    END IF;
                 ELSE
                     SET @pagination = 0;
-                    SET @query = CONCAT('SELECT * FROM product p where p.companyUuid = ? order by createdOn desc');
+                    IF @caller = 'prodSearch' THEN
+                        SET @query = CONCAT('SELECT * FROM product p where p.companyUuid = ? and (p.productName like ? or p.partNumber like ?) order by createdOn desc');
+                    ELSEIF @caller = 'sort' THEN
+                        SET @query = CONCAT('SELECT * FROM product p where p.companyUuid = ? order by ?');
+                    ELSE
+                        SET @query = CONCAT('SELECT * FROM product p where p.companyUuid = ? order by createdOn desc');
+                    END IF;
                 END IF;
                 
                 select @count as count, @pagination as pagination;
-                
                 PREPARE stmt FROM @query;
-                EXECUTE stmt USING @companyUuid;
-                DEALLOCATE PREPARE stmt;
+                IF @caller = 'prodSearch' THEN
+                    EXECUTE stmt USING @companyUuid, @searchText, @searchText;
+                ELSEIF @caller = 'sort' THEN
+                    EXECUTE stmt USING @companyUuid, @sortName;
+                ELSE
+                    EXECUTE stmt USING @companyUuid;
+                END IF;
+                DEALLOCATE PREPARE stmt;       
             END`
 }
 
