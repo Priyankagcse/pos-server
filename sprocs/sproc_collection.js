@@ -20,35 +20,33 @@ const STOCKBULKINSERT = {
                 
                 DECLARE i int DEFAULT 0;
                 
-                DECLARE stockList JSON DEFAULT (JSON_EXTRACT(stockObj, '$.stockList'));
+                DECLARE stockList JSON DEFAULT (JSONEXTRACT(stockObj, '$.stockList'));
                 DECLARE stockLength INT DEFAULT JSON_LENGTH(stockList);
                 
                 WHILE i < stockLength DO
                 
                     SET @uuid = (select uuid());
                     
-                    SET lastModifiedOnValue = JSON_UNQUOTE(JSON_EXTRACT(stockList, CONCAT('$[', i, '].lastModifiedOn')));        
+                    SET lastModifiedOnValue = JSONUNQUOTE(stockList, CONCAT('$[', i, '].lastModifiedOn'));        
                     IF DATE(lastModifiedOnValue) IS NOT NULL THEN
-                        SET lastModifiedOnDateTime = STR_TO_DATE(lastModifiedOnValue, '%Y-%m-%dT%H:%i:%s.000Z');
+                        SET lastModifiedOnDateTime = STRTODATE(lastModifiedOnValue);
                     ELSE
                         SET lastModifiedOnDateTime = NULL;
                     END IF;
                     
-                    SET createdOnValue = JSON_UNQUOTE(JSON_EXTRACT(stockList, CONCAT('$[', i, '].createdOn')));
+                    SET createdOnValue = JSONUNQUOTE(stockList, CONCAT('$[', i, '].createdOn'));
                     IF DATE(createdOnValue) IS NOT NULL THEN
-                        SET createdOnDatetime = STR_TO_DATE(createdOnValue, '%Y-%m-%dT%H:%i:%s.000Z');
+                        SET createdOnDatetime = STRTODATE(createdOnValue);
                     ELSE
                         SET createdOnDatetime = NULL;
                     END IF;
                     
                     INSERT INTO stock (uuid, userUuid, companyUuid, productUuid, uom, stock, isActive, createdOn, createdBy, lastModifiedOn, lastModifiedBy)
-                        VALUES (@uuid, JSON_UNQUOTE(JSON_EXTRACT(stockObj, '$.userUuid')), JSON_UNQUOTE(JSON_EXTRACT(stockObj, '$.companyUuid')),
-                            JSON_UNQUOTE(JSON_EXTRACT(stockList, CONCAT('$[', i, '].uuid'))),
-                            JSON_UNQUOTE(JSON_EXTRACT(stockList, CONCAT('$[', i, '].uom'))), JSON_UNQUOTE(JSON_EXTRACT(stockList, CONCAT('$[', i, '].stock'))),
-                            1, createdOnDatetime,
-                            JSON_UNQUOTE(JSON_EXTRACT(stockList, CONCAT('$[', i, '].createdBy'))),
-                            lastModifiedOnDateTime,
-                            JSON_UNQUOTE(JSON_EXTRACT(stockList, CONCAT('$[', i, '].lastModifiedBy'))));      
+                        VALUES (@uuid, JSONUNQUOTE(stockObj, '$.userUuid'), JSONUNQUOTE(stockObj, '$.companyUuid'),
+                            JSONUNQUOTE(stockList, CONCAT('$[', i, '].uuid')), JSONUNQUOTE(stockList, CONCAT('$[', i, '].uom')),
+                            JSONUNQUOTE(stockList, CONCAT('$[', i, '].stock')), 1, createdOnDatetime,
+                            JSONUNQUOTE(stockList, CONCAT('$[', i, '].createdBy')), lastModifiedOnDateTime,
+                            JSONUNQUOTE(stockList, CONCAT('$[', i, '].lastModifiedBy')));
                     
                     SET i = i + 1;
                 END WHILE;
@@ -59,13 +57,14 @@ const GETPRODUCT = {
     name: 'GETPRODUCT',
     query: `CREATE PROCEDURE getProduct(IN productObj JSON)
             BEGIN
-                SET @companyUuid = JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.companyUuid'));
-                SET @startPageLimit = JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.startPageLimit'));
-                SET @endPageLimit = JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.endPageLimit'));
-                SET @maxRowLimit = JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.maxRowLimit'));
-                SET @caller = IFNULL(JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.caller')), '');
-                SET @searchText = IFNULL(concat('%', JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.searchText')), '%'), '');
-                SET @sortName = concat(IFNULL(JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.sortColumn')), ''), ' ' , IFNULL(JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.sortDirection')), ''));
+                SET @companyUuid = JSONUNQUOTE(productObj, '$.companyUuid');
+                SET @startPageLimit = JSONUNQUOTE(productObj, '$.startPageLimit');
+                SET @endPageLimit = JSONUNQUOTE(productObj, '$.endPageLimit');
+                SET @maxRowLimit = JSONUNQUOTE(productObj, '$.maxRowLimit');
+                SET @caller = IFNULL(JSONUNQUOTE(productObj, '$.caller'), '');
+                SET @searchText = IFNULL(concat('%', JSONUNQUOTE(productObj, '$.searchText'), '%'), '');
+                SET @sortColumn = concat(' ', IFNULL(JSONUNQUOTE(productObj, '$.sortColumn'), ''));
+                SET @sortType = concat(' ', IFNULL(JSONUNQUOTE(productObj, '$.sortDirection'), ''));
                 
                 IF @caller = 'prodSearch' THEN
                     SET @count = (select COUNT(uuid) as count from product p where p.companyUuid = @companyUuid and (p.productName like @searchText or p.partNumber like @searchText));
@@ -78,7 +77,7 @@ const GETPRODUCT = {
                     IF @caller = 'prodSearch' THEN
                         SET @query = CONCAT('SELECT * FROM product p where p.companyUuid = ? and (p.productName like ? or p.partNumber like ?) order by createdOn desc LIMIT ', @startPageLimit, ', ', @endPageLimit);
                     ELSEIF @caller = 'sort' THEN
-                        SET @query = CONCAT('SELECT * FROM product p where p.companyUuid = ? order by ? LIMIT ', @startPageLimit, ', ', @endPageLimit);
+                        SET @query = CONCAT('SELECT * FROM product p where p.companyUuid = ? order by ', @sortColumn, @sortType, ' LIMIT ', @startPageLimit, ', ', @endPageLimit);
                     ELSE
                         SET @query = CONCAT('SELECT * FROM product p where p.companyUuid = ? order by createdOn desc LIMIT ', @startPageLimit, ', ', @endPageLimit);
                     END IF;
@@ -87,22 +86,20 @@ const GETPRODUCT = {
                     IF @caller = 'prodSearch' THEN
                         SET @query = CONCAT('SELECT * FROM product p where p.companyUuid = ? and (p.productName like ? or p.partNumber like ?) order by createdOn desc');
                     ELSEIF @caller = 'sort' THEN
-                        SET @query = CONCAT('SELECT * FROM product p where p.companyUuid = ? order by ?');
+                        SET @query = CONCAT('SELECT * FROM product p where p.companyUuid = ? order by ', @sortColumn, @sortType);
                     ELSE
                         SET @query = CONCAT('SELECT * FROM product p where p.companyUuid = ? order by createdOn desc');
                     END IF;
                 END IF;
-                
+                    
                 select @count as count, @pagination as pagination;
                 PREPARE stmt FROM @query;
                 IF @caller = 'prodSearch' THEN
                     EXECUTE stmt USING @companyUuid, @searchText, @searchText;
-                ELSEIF @caller = 'sort' THEN
-                    EXECUTE stmt USING @companyUuid, @sortName;
                 ELSE
                     EXECUTE stmt USING @companyUuid;
                 END IF;
-                DEALLOCATE PREPARE stmt;       
+                DEALLOCATE PREPARE stmt;  
             END`
 }
 

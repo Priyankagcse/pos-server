@@ -10,7 +10,10 @@ function tableSpRefresh() {
     const spRefresh = require('./sp-index');
     spRefresh(null, () => {
         const tableRefresh = require('./table-index');
-        tableRefresh(null);
+        tableRefresh(null, () => {
+            const fnRefresh = require('./fn-index');
+            fnRefresh(null);
+        });
     });
 }
 tableSpRefresh();

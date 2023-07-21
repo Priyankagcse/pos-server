@@ -98,13 +98,66 @@ const stock = {
     ]   
 }
 
+const billheader = {
+    name: 'billheader',
+    query: `PRIMARY KEY (uuid)`,
+    queryList: [
+        {field: 'uuid', type: 'varchar(50)', null: 'NOT NULL'},
+        {field: 'userUuid', type: 'varchar(50)', null: 'NOT NULL'},
+        {field: 'companyUuid', type: 'varchar(50)', null: 'NOT NULL'},
+        {field: 'billNumber', type: 'varchar(50)', null: 'NOT NULL'},
+        {field: 'amount', type: 'DECIMAL(16,2)', null: 'NOT NULL'},
+        {field: 'taxableAmount', type: 'DECIMAL(16,2)', null: 'DEFAULT NULL'},
+        {field: 'tax', type: 'DECIMAL(16,2)', null: 'DEFAULT NULL'},
+        {field: 'customerName', type: 'varchar(100)', null: 'DEFAULT NULL'},
+        {field: 'phoneNumber', type: 'varchar(20)', null: 'DEFAULT NULL'},
+        {field: 'address', type: 'varchar(250)', null: 'DEFAULT NULL'},
+        {field: 'billDate', type: 'datetime', null: 'NOT NULL'},
+        {field: 'discountAmt', type: 'DECIMAL(16,2)', null: 'DEFAULT NULL'},
+        {field: 'discountPer', type: 'DECIMAL(16,2)', null: 'DEFAULT NULL'},
+        {field: 'isActive', type: 'boolean', null: 'DEFAULT NULL'},
+        {field: 'createdOn', type: 'datetime', null: 'NOT NULL'},
+        {field: 'createdBy', type: 'varchar(50)', null: 'DEFAULT NULL'},
+        {field: 'lastModifiedOn', type: 'datetime', null: 'DEFAULT NULL'},
+        {field: 'lastModifiedBy', type: 'varchar(50)', null: 'DEFAULT NULL'}
+    ]   
+}
+
+const billlines = {
+    name: 'billlines',
+    query: `PRIMARY KEY (uuid)`,
+    queryList: [
+        {field: 'uuid', type: 'varchar(50)', null: 'NOT NULL'},
+        {field: 'userUuid', type: 'varchar(50)', null: 'NOT NULL'},
+        {field: 'companyUuid', type: 'varchar(50)', null: 'NOT NULL'},
+        {field: 'hdrUuid', type: 'varchar(50)', null: 'NOT NULL'},
+        {field: 'productName', type: 'varchar(100)', null: 'NOT NULL'},
+        {field: 'productDescription', type: 'varchar(150)', null: 'DEFAULT NULL'},
+        {field: 'partNumber', type: 'varchar(100)', null: 'NOT NULL'},
+        {field: 'qty', type: 'DECIMAL(16,2)', null: 'NOT NULL'},
+        {field: 'gst', type: 'DECIMAL(16,2)', null: 'DEFAULT NULL'},
+        {field: 'amount', type: 'DECIMAL(16,2)', null: 'NOT NULL'},
+        {field: 'uom', type: 'varchar(50)', null: 'DEFAULT NULL'},
+        {field: 'taxableAmount', type: 'DECIMAL(16,2)', null: 'DEFAULT NULL'},
+        {field: 'tax', type: 'DECIMAL(16,2)', null: 'DEFAULT NULL'},
+        {field: 'discountAmt', type: 'DECIMAL(16,2)', null: 'DEFAULT NULL'},
+        {field: 'discountPer', type: 'DECIMAL(16,2)', null: 'DEFAULT NULL'},
+        {field: 'createdOn', type: 'datetime', null: 'NOT NULL'},
+        {field: 'createdBy', type: 'varchar(50)', null: 'DEFAULT NULL'},
+        {field: 'lastModifiedOn', type: 'datetime', null: 'DEFAULT NULL'},
+        {field: 'lastModifiedBy', type: 'varchar(50)', null: 'DEFAULT NULL'}
+    ]   
+}
+
 const all_tables = [
     menulist,
     userlist,
     versionupdate,
     company,
     product,
-    stock
+    stock,
+    billheader,
+    billlines
 ]
 
 module.exports = all_tables
