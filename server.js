@@ -232,3 +232,16 @@ app.put("/stockBulkInsert", (req, res) => {
         }
     });
 });
+
+app.put("/billSave", (req, res) => {
+    let totalAmount = req.body.lines.reduce((prev, current) => prev + (+current.price || 0), 0);
+    const putObj = { ...req.body, amount: totalAmount };
+    const sqlInsert = `CALL billSave('${JSON.stringify(putObj)}')`;
+    db.query(sqlInsert, (err, result) => {
+        if (err) {
+            res.status(400).send({ message: err.sqlMessage });
+        } else {
+            res.send({ data: result });
+        }
+    });
+});

@@ -28,10 +28,21 @@ const STRTODATE = {
             END`
 }
 
+const LOOPJSONUNQUOTE = {
+    name: 'LOOPJSONUNQUOTE',
+    fnName: `CREATE FUNCTION LOOPJSONUNQUOTE(reqObj JSON, currentIndex varchar(50), searchKey varchar(50))
+            RETURNS longtext
+            BEGIN
+                DECLARE resObj longtext DEFAULT JSON_UNQUOTE(JSONEXTRACT(reqObj, CONCAT('$[', currentIndex, '].', searchKey)));
+                RETURN resObj;
+            END`
+}
+
 const all_fns = [
     JSONEXTRACT,
     JSONUNQUOTE,
-    STRTODATE
+    STRTODATE,
+    LOOPJSONUNQUOTE
 ]
 
 module.exports = all_fns

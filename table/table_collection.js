@@ -94,7 +94,6 @@ const stock = {
         {field: 'createdBy', type: 'varchar(50)', null: 'DEFAULT NULL'},
         {field: 'lastModifiedOn', type: 'datetime', null: 'DEFAULT NULL'},
         {field: 'lastModifiedBy', type: 'varchar(50)', null: 'DEFAULT NULL'}
-        
     ]   
 }
 
@@ -119,7 +118,8 @@ const billheader = {
         {field: 'createdOn', type: 'datetime', null: 'NOT NULL'},
         {field: 'createdBy', type: 'varchar(50)', null: 'DEFAULT NULL'},
         {field: 'lastModifiedOn', type: 'datetime', null: 'DEFAULT NULL'},
-        {field: 'lastModifiedBy', type: 'varchar(50)', null: 'DEFAULT NULL'}
+        {field: 'lastModifiedBy', type: 'varchar(50)', null: 'DEFAULT NULL'},
+        {field: 'status', type: 'varchar(50)', null: 'DEFAULT NULL'}
     ]   
 }
 
@@ -145,7 +145,8 @@ const billlines = {
         {field: 'createdOn', type: 'datetime', null: 'NOT NULL'},
         {field: 'createdBy', type: 'varchar(50)', null: 'DEFAULT NULL'},
         {field: 'lastModifiedOn', type: 'datetime', null: 'DEFAULT NULL'},
-        {field: 'lastModifiedBy', type: 'varchar(50)', null: 'DEFAULT NULL'}
+        {field: 'lastModifiedBy', type: 'varchar(50)', null: 'DEFAULT NULL'},
+        {field: 'status', type: 'varchar(50)', null: 'DEFAULT NULL'}
     ]   
 }
 

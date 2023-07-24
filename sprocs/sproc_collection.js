@@ -103,11 +103,90 @@ const GETPRODUCT = {
             END`
 }
 
+const BILLSAVE = {
+    name: 'BILLSAVE',
+    query: `CREATE PROCEDURE billSave(IN billObj JSON)
+            BEGIN
+                DECLARE createdOnDatetime DATETIME;
+                DECLARE createdOnValue VARCHAR(50);
+                
+                DECLARE lastModifiedOnDateTime DATETIME;
+                DECLARE lastModifiedOnValue VARCHAR(50);
+                
+                DECLARE billDateTime DATETIME;
+                DECLARE billDateOnValue VARCHAR(50);
+                
+                DECLARE i int DEFAULT 0;
+                
+                DECLARE billLines JSON DEFAULT (JSONEXTRACT(billObj, '$.lines'));
+                DECLARE billLinesLength INT DEFAULT JSON_LENGTH(billLines);
+                
+                SET @hdrUuid = (select uuid());
+                SET @lineUuid = (select uuid());
+                
+                SET @billNumber = (SELECT count(*) from billheader);
+                
+                SET billDateOnValue = JSONUNQUOTE(billObj, '$.billDate');        
+                IF DATE(billDateOnValue) IS NOT NULL THEN
+                    SET billDateTime = STRTODATE(billDateOnValue);
+                ELSE
+                    SET billDateTime = NULL;
+                END IF;
+                
+                INSERT INTO billheader (uuid, userUuid, companyUuid, billNumber, amount, taxableAmount, tax, customerName,
+                    phoneNumber, address, billDate, discountAmt, discountPer, isActive, createdOn, createdBy, lastModifiedOn, lastModifiedBy, status)
+                    VALUES (@hdrUuid, JSONUNQUOTE(billObj, '$.userUuid'), JSONUNQUOTE(billObj, '$.companyUuid'),
+                        CONCAT('B', LPAD((@billNumber + 1), 3, '0')), JSONUNQUOTE(billObj, '$.amount'),
+                        JSONUNQUOTE(billObj, '$.taxableAmount'), JSONUNQUOTE(billObj, '$.tax'),
+                        JSONUNQUOTE(billObj, '$.customerName'), JSONUNQUOTE(billObj, '$.phoneNumber'),
+                        JSONUNQUOTE(billObj, '$.address'), billDateTime,
+                        JSONUNQUOTE(billObj, '$.discountAmt'), JSONUNQUOTE(billObj, '$.discountPer'),
+                        1, JSONUNQUOTE(billObj, '$.createdOn'), JSONUNQUOTE(billObj, '$.createdBy'),
+                        JSONUNQUOTE(billObj, '$.lastModifiedOn'), JSONUNQUOTE(billObj, '$.lastModifiedBy'),
+                        100
+                    );
+                
+                SELECT * from billheader bh where bh.companyUuid = JSONUNQUOTE(billObj, '$.companyUuid') and uuid = @hdrUuid;
+                
+                WHILE i < billLinesLength DO
+                    
+                    SET lastModifiedOnValue = JSONUNQUOTE(billLines, CONCAT('$[', i, '].lastModifiedOn'));        
+                    IF DATE(lastModifiedOnValue) IS NOT NULL THEN
+                        SET lastModifiedOnDateTime = STRTODATE(lastModifiedOnValue);
+                    ELSE
+                        SET lastModifiedOnDateTime = NULL;
+                    END IF;
+                    
+                    SET createdOnValue = JSONUNQUOTE(billLines, CONCAT('$[', i, '].createdOn'));
+                    IF DATE(createdOnValue) IS NOT NULL THEN
+                        SET createdOnDatetime = STRTODATE(createdOnValue);
+                    ELSE
+                        SET createdOnDatetime = NULL;
+                    END IF;
+                                
+                    INSERT INTO billlines (uuid, userUuid, companyUuid, hdrUuid, productName, productDescription, partNumber, qty,
+                    gst, amount, uom, taxableAmount, tax, discountAmt, discountPer, createdOn, createdBy, lastModifiedOn, lastModifiedBy, status)
+                    VALUES (@lineUuid, JSONUNQUOTE(billObj, '$.userUuid'), JSONUNQUOTE(billObj, '$.companyUuid'), @hdrUuid,
+                        LOOPJSONUNQUOTE(billLines, i, 'productName'), LOOPJSONUNQUOTE(billLines, i, 'productDescription'),
+                        LOOPJSONUNQUOTE(billLines, i, 'partNumber'), LOOPJSONUNQUOTE(billLines, i, 'qty'),
+                        LOOPJSONUNQUOTE(billLines, i, 'gst'), LOOPJSONUNQUOTE(billLines, i, 'price'),
+                        LOOPJSONUNQUOTE(billLines, i, 'uom'), LOOPJSONUNQUOTE(billLines, i, 'taxableAmount'),
+                        LOOPJSONUNQUOTE(billLines, i, 'tax'), LOOPJSONUNQUOTE(billLines, i, 'discountAmt'),
+                        LOOPJSONUNQUOTE(billLines, i, 'discountPer'), createdOnDatetime,
+                        LOOPJSONUNQUOTE(billLines, i, 'createdBy'), lastModifiedOnDateTime,
+                        LOOPJSONUNQUOTE(billLines, i, 'lastModifiedBy'), 100
+                    );
+                    
+                    SET i = i + 1;
+                END WHILE;    
+            END`
+}
 
 const all_store_procedure = [
     INITIALREFRESH,
     STOCKBULKINSERT,
-    GETPRODUCT
+    GETPRODUCT,
+    BILLSAVE
 ]
 
 module.exports = all_store_procedure
