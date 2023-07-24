@@ -146,7 +146,8 @@ const billlines = {
         {field: 'createdBy', type: 'varchar(50)', null: 'DEFAULT NULL'},
         {field: 'lastModifiedOn', type: 'datetime', null: 'DEFAULT NULL'},
         {field: 'lastModifiedBy', type: 'varchar(50)', null: 'DEFAULT NULL'},
-        {field: 'status', type: 'varchar(50)', null: 'DEFAULT NULL'}
+        {field: 'status', type: 'varchar(50)', null: 'DEFAULT NULL'},
+        {field: 'productUuid', type: 'varchar(50)', null: 'NOT NULL'}
     ]   
 }
 

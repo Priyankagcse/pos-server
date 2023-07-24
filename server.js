@@ -234,8 +234,11 @@ app.put("/stockBulkInsert", (req, res) => {
 });
 
 app.put("/billSave", (req, res) => {
-    let totalAmount = req.body.lines.reduce((prev, current) => prev + (+current.price || 0), 0);
-    const putObj = { ...req.body, amount: totalAmount };
+    let reqObj = req.body;
+    let totalAmount = reqObj.lines.reduce((prev, current) => prev + (+current.price || 0), 0);
+    let totalQty = reqObj.lines.reduce((prev, current) => prev + (+current.qty || 0), 0);
+    let productUuid = reqObj.lines.length ? reqObj.lines[0]['uuid'] : '';
+    const putObj = {...reqObj, amount: totalAmount, totalQty: totalQty, productUuid: productUuid};
     const sqlInsert = `CALL billSave('${JSON.stringify(putObj)}')`;
     db.query(sqlInsert, (err, result) => {
         if (err) {
