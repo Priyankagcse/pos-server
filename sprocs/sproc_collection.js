@@ -117,7 +117,6 @@ const BILLSAVE = {
                 DECLARE billDateOnValue VARCHAR(50);
                 
                 DECLARE i int DEFAULT 0;
-                DECLARE j int DEFAULT 0;
                 
                 DECLARE billLines JSON DEFAULT (JSONEXTRACT(billObj, '$.lines'));
                 DECLARE billLinesLength INT DEFAULT JSON_LENGTH(billLines);
@@ -125,7 +124,6 @@ const BILLSAVE = {
                 DECLARE stockLineLength INT;
                 
                 SET @hdrUuid = (select uuid());
-                SET @lineUuid = (select uuid());
                 
                 SET @billNumber = (SELECT count(*) from billheader);
                 
@@ -152,6 +150,8 @@ const BILLSAVE = {
                 SELECT * from billheader bh where bh.companyUuid = JSONUNQUOTE(billObj, '$.companyUuid') and uuid = @hdrUuid;
                 
                 WHILE i < billLinesLength DO
+                    
+                    SET @lineUuid = (select uuid());
                     
                     SET lastModifiedOnValue = JSONUNQUOTE(billLines, CONCAT('$[', i, '].lastModifiedOn'));        
                     IF DATE(lastModifiedOnValue) IS NOT NULL THEN
@@ -180,36 +180,37 @@ const BILLSAVE = {
                         LOOPJSONUNQUOTE(billLines, i, 'lastModifiedBy'), 100, LOOPJSONUNQUOTE(billLines, i, 'uuid')
                     );
                     
+                    SET @j = 0;
+                    SET @stockLine = (SELECT 
+                        (SELECT JSON_ARRAYAGG(
+                            JSON_OBJECT(
+                                'uuid', uuid,
+                                'stock', stock,
+                                'productUuid', productUuid
+                            )
+                        ) AS json_result
+                        FROM stock s where s.companyUuid = JSONUNQUOTE(billObj, '$.companyUuid') and s.productUuid = LOOPJSONUNQUOTE(billLines, i, 'uuid') and s.stock > 0 order by createdOn asc
+                    ));
+                    SET @stockLineLength = JSON_LENGTH(@stockLine);
+                    SET @totalQty = LOOPJSONUNQUOTE(billLines, i, 'qty');
+                    WHILE @j < @stockLineLength DO
+                        IF LOOPJSONUNQUOTE(billLines, i, 'uuid') = LOOPJSONUNQUOTE(@stockLine, @j, 'productUuid') THEN
+                            SET @stockCount = LOOPJSONUNQUOTE(@stockLine, @j, 'stock');
+                            IF @stockCount > 0 THEN
+                                IF @stockCount > @totalQty THEN
+                                    SET @stockCount = @stockCount - @totalQty;
+                                    SET @totalQty = 0;
+                                ELSE
+                                    SET @totalQty = @totalQty - @stockCount;
+                                    SET @stockCount = @stockCount - @stockCount;                
+                                END IF;
+                                Update stock set stock = @stockCount where uuid = LOOPJSONUNQUOTE(@stockLine, @j, 'uuid');
+                            END IF;
+                        END IF;
+                    SET @j = @j + 1;
+                    END WHILE;
                     SET i = i + 1;
                 END WHILE;
-                        
-                SET @stockLine = (SELECT 
-                    (SELECT JSON_ARRAYAGG(
-                        JSON_OBJECT(
-                            'uuid', uuid,
-                            'stock', stock
-                        )
-                    ) AS json_result
-                    FROM stock s where s.companyUuid = JSONUNQUOTE(billObj, '$.companyUuid') and s.productUuid = JSONUNQUOTE(billObj, '$.productUuid') order by createdOn asc
-                ));
-                
-                SET stockLineLength = JSON_LENGTH(@stockLine);
-                
-                SET @totalQty = JSONUNQUOTE(billObj, '$.totalQty');
-                WHILE j < stockLineLength DO
-                    SET @stockCount = LOOPJSONUNQUOTE(@stockLine, j, 'stock');
-                    IF @stockCount > 0 THEN
-                        IF @stockCount > @totalQty THEN
-                            SET @stockCount = @stockCount - @totalQty;
-                            SET @totalQty = 0;
-                        ELSE
-                            SET @totalQty = @totalQty - @stockCount;
-                            SET @stockCount = @stockCount - @stockCount;                
-                        END IF;
-                        Update stock set stock = @stockCount where uuid = LOOPJSONUNQUOTE(@stockLine, j, 'uuid');
-                    END IF;
-                SET j = j + 1;
-                END WHILE;    
             END`
 }
 
