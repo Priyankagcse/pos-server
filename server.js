@@ -11,8 +11,8 @@ function tableSpRefresh() {
     spRefresh(null, () => {
         const tableRefresh = require('./table-index');
         tableRefresh(null, () => {
-            const fnRefresh = require('./fn-index');
-            fnRefresh(null);
+            // const fnRefresh = require('./fn-index');
+            // fnRefresh(null);
         });
     });
 }

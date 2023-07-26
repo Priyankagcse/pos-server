@@ -20,33 +20,33 @@ const STOCKBULKINSERT = {
                 
                 DECLARE i int DEFAULT 0;
                 
-                DECLARE stockList JSON DEFAULT (JSONEXTRACT(stockObj, '$.stockList'));
+                DECLARE stockList JSON DEFAULT (JSON_EXTRACT(stockObj, '$.stockList'));
                 DECLARE stockLength INT DEFAULT JSON_LENGTH(stockList);
                 
                 WHILE i < stockLength DO
                 
                     SET @uuid = (select uuid());
                     
-                    SET lastModifiedOnValue = JSONUNQUOTE(stockList, CONCAT('$[', i, '].lastModifiedOn'));        
+                    SET lastModifiedOnValue = JSON_UNQUOTE(JSON_EXTRACT(stockList, CONCAT('$[', i, '].lastModifiedOn')));        
                     IF DATE(lastModifiedOnValue) IS NOT NULL THEN
-                        SET lastModifiedOnDateTime = STRTODATE(lastModifiedOnValue);
+                        SET lastModifiedOnDateTime = STR_TO_DATE(lastModifiedOnValue, '%Y-%m-%dT%H:%i:%s.000Z');
                     ELSE
                         SET lastModifiedOnDateTime = NULL;
                     END IF;
                     
-                    SET createdOnValue = JSONUNQUOTE(stockList, CONCAT('$[', i, '].createdOn'));
+                    SET createdOnValue = JSON_UNQUOTE(JSON_EXTRACT(stockList, CONCAT('$[', i, '].createdOn')));
                     IF DATE(createdOnValue) IS NOT NULL THEN
-                        SET createdOnDatetime = STRTODATE(createdOnValue);
+                        SET createdOnDatetime = STR_TO_DATE(createdOnValue, '%Y-%m-%dT%H:%i:%s.000Z');
                     ELSE
                         SET createdOnDatetime = NULL;
                     END IF;
                     
                     INSERT INTO stock (uuid, userUuid, companyUuid, productUuid, uom, stock, isActive, createdOn, createdBy, lastModifiedOn, lastModifiedBy)
-                        VALUES (@uuid, JSONUNQUOTE(stockObj, '$.userUuid'), JSONUNQUOTE(stockObj, '$.companyUuid'),
-                            JSONUNQUOTE(stockList, CONCAT('$[', i, '].uuid')), JSONUNQUOTE(stockList, CONCAT('$[', i, '].uom')),
-                            JSONUNQUOTE(stockList, CONCAT('$[', i, '].stock')), 1, createdOnDatetime,
-                            JSONUNQUOTE(stockList, CONCAT('$[', i, '].createdBy')), lastModifiedOnDateTime,
-                            JSONUNQUOTE(stockList, CONCAT('$[', i, '].lastModifiedBy')));
+                        VALUES (@uuid, JSON_UNQUOTE(JSON_EXTRACT(stockObj, '$.userUuid')), JSON_UNQUOTE(JSON_EXTRACT(stockObj, '$.companyUuid')),
+                            JSON_UNQUOTE(JSON_EXTRACT(stockList, CONCAT('$[', i, '].uuid'))), JSON_UNQUOTE(JSON_EXTRACT(stockList, CONCAT('$[', i, '].uom'))),
+                            JSON_UNQUOTE(JSON_EXTRACT(stockList, CONCAT('$[', i, '].stock'))), 1, createdOnDatetime,
+                            JSON_UNQUOTE(JSON_EXTRACT(stockList, CONCAT('$[', i, '].createdBy'))), lastModifiedOnDateTime,
+                            JSON_UNQUOTE(JSON_EXTRACT(stockList, CONCAT('$[', i, '].lastModifiedBy'))));
                     
                     SET i = i + 1;
                 END WHILE;
@@ -57,14 +57,14 @@ const GETPRODUCT = {
     name: 'GETPRODUCT',
     query: `CREATE PROCEDURE getProduct(IN productObj JSON)
             BEGIN
-                SET @companyUuid = JSONUNQUOTE(productObj, '$.companyUuid');
-                SET @startPageLimit = JSONUNQUOTE(productObj, '$.startPageLimit');
-                SET @endPageLimit = JSONUNQUOTE(productObj, '$.endPageLimit');
-                SET @maxRowLimit = JSONUNQUOTE(productObj, '$.maxRowLimit');
-                SET @caller = IFNULL(JSONUNQUOTE(productObj, '$.caller'), '');
-                SET @searchText = IFNULL(concat('%', JSONUNQUOTE(productObj, '$.searchText'), '%'), '');
-                SET @sortColumn = concat(' ', IFNULL(JSONUNQUOTE(productObj, '$.sortColumn'), ''));
-                SET @sortType = concat(' ', IFNULL(JSONUNQUOTE(productObj, '$.sortDirection'), ''));
+                SET @companyUuid = JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.companyUuid'));
+                SET @startPageLimit = JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.startPageLimit'));
+                SET @endPageLimit = JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.endPageLimit'));
+                SET @maxRowLimit = JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.maxRowLimit'));
+                SET @caller = IFNULL(JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.caller')), '');
+                SET @searchText = IFNULL(concat('%', JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.searchText')), '%'), '');
+                SET @sortColumn = concat(' ', IFNULL(JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.sortColumn')), ''));
+                SET @sortType = concat(' ', IFNULL(JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.sortDirection')), ''));
                 
                 IF @caller = 'prodSearch' THEN
                     SET @count = (select COUNT(uuid) as count from product p where p.companyUuid = @companyUuid and (p.productName like @searchText or p.partNumber like @searchText));
@@ -118,7 +118,7 @@ const BILLSAVE = {
                 
                 DECLARE i int DEFAULT 0;
                 
-                DECLARE billLines JSON DEFAULT (JSONEXTRACT(billObj, '$.lines'));
+                DECLARE billLines JSON DEFAULT (JSON_EXTRACT(billObj, '$.lines'));
                 DECLARE billLinesLength INT DEFAULT JSON_LENGTH(billLines);
                 
                 DECLARE stockLineLength INT;
@@ -127,57 +127,65 @@ const BILLSAVE = {
                 
                 SET @billNumber = (SELECT count(*) from billheader);
                 
-                SET billDateOnValue = JSONUNQUOTE(billObj, '$.billDate');        
+                SET billDateOnValue = JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.billDate'));        
                 IF DATE(billDateOnValue) IS NOT NULL THEN
-                    SET billDateTime = STRTODATE(billDateOnValue);
+                    SET billDateTime = STR_TO_DATE(billDateOnValue, '%Y-%m-%dT%H:%i:%s.000Z');
                 ELSE
                     SET billDateTime = NULL;
                 END IF;
                 
                 INSERT INTO billheader (uuid, userUuid, companyUuid, billNumber, amount, taxableAmount, tax, customerName,
                     phoneNumber, address, billDate, discountAmt, discountPer, isActive, createdOn, createdBy, lastModifiedOn, lastModifiedBy, status)
-                    VALUES (@hdrUuid, JSONUNQUOTE(billObj, '$.userUuid'), JSONUNQUOTE(billObj, '$.companyUuid'),
-                        CONCAT('B', LPAD((@billNumber + 1), 3, '0')), JSONUNQUOTE(billObj, '$.amount'),
-                        JSONUNQUOTE(billObj, '$.taxableAmount'), JSONUNQUOTE(billObj, '$.tax'),
-                        JSONUNQUOTE(billObj, '$.customerName'), JSONUNQUOTE(billObj, '$.phoneNumber'),
-                        JSONUNQUOTE(billObj, '$.address'), billDateTime,
-                        JSONUNQUOTE(billObj, '$.discountAmt'), JSONUNQUOTE(billObj, '$.discountPer'),
-                        1, JSONUNQUOTE(billObj, '$.createdOn'), JSONUNQUOTE(billObj, '$.createdBy'),
-                        JSONUNQUOTE(billObj, '$.lastModifiedOn'), JSONUNQUOTE(billObj, '$.lastModifiedBy'),
+                    VALUES (@hdrUuid, JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.userUuid')), JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.companyUuid')),
+                        CONCAT('B', LPAD((@billNumber + 1), 3, '0')), JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.amount')),
+                        JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.taxableAmount')), JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.tax')),
+                        JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.customerName')), JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.phoneNumber')),
+                        JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.address')), billDateTime,
+                        JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.discountAmt')), JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.discountPer')),
+                        1, JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.createdOn')), JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.createdBy')),
+                        JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.lastModifiedOn')), JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.lastModifiedBy')),
                         100
                     );
                 
-                SELECT * from billheader bh where bh.companyUuid = JSONUNQUOTE(billObj, '$.companyUuid') and uuid = @hdrUuid;
+                SELECT * from billheader bh where bh.companyUuid = JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.companyUuid')) and uuid = @hdrUuid;
                 
                 WHILE i < billLinesLength DO
                     
                     SET @lineUuid = (select uuid());
                     
-                    SET lastModifiedOnValue = JSONUNQUOTE(billLines, CONCAT('$[', i, '].lastModifiedOn'));        
+                    SET lastModifiedOnValue = JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].lastModifiedOn')));        
                     IF DATE(lastModifiedOnValue) IS NOT NULL THEN
-                        SET lastModifiedOnDateTime = STRTODATE(lastModifiedOnValue);
+                        SET lastModifiedOnDateTime = STR_TO_DATE(lastModifiedOnValue, '%Y-%m-%dT%H:%i:%s.000Z');
                     ELSE
                         SET lastModifiedOnDateTime = NULL;
                     END IF;
                     
-                    SET createdOnValue = JSONUNQUOTE(billLines, CONCAT('$[', i, '].createdOn'));
+                    SET createdOnValue = JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].createdOn')));
                     IF DATE(createdOnValue) IS NOT NULL THEN
-                        SET createdOnDatetime = STRTODATE(createdOnValue);
+                        SET createdOnDatetime = STR_TO_DATE(createdOnValue, '%Y-%m-%dT%H:%i:%s.000Z');
                     ELSE
                         SET createdOnDatetime = NULL;
                     END IF;
                                 
                     INSERT INTO billlines (uuid, userUuid, companyUuid, hdrUuid, productName, productDescription, partNumber, qty,
                     gst, amount, uom, taxableAmount, tax, discountAmt, discountPer, createdOn, createdBy, lastModifiedOn, lastModifiedBy, status, productUuid)
-                    VALUES (@lineUuid, JSONUNQUOTE(billObj, '$.userUuid'), JSONUNQUOTE(billObj, '$.companyUuid'), @hdrUuid,
-                        LOOPJSONUNQUOTE(billLines, i, 'productName'), LOOPJSONUNQUOTE(billLines, i, 'productDescription'),
-                        LOOPJSONUNQUOTE(billLines, i, 'partNumber'), LOOPJSONUNQUOTE(billLines, i, 'qty'),
-                        LOOPJSONUNQUOTE(billLines, i, 'gst'), LOOPJSONUNQUOTE(billLines, i, 'price'),
-                        LOOPJSONUNQUOTE(billLines, i, 'uom'), LOOPJSONUNQUOTE(billLines, i, 'taxableAmount'),
-                        LOOPJSONUNQUOTE(billLines, i, 'tax'), LOOPJSONUNQUOTE(billLines, i, 'discountAmt'),
-                        LOOPJSONUNQUOTE(billLines, i, 'discountPer'), createdOnDatetime,
-                        LOOPJSONUNQUOTE(billLines, i, 'createdBy'), lastModifiedOnDateTime,
-                        LOOPJSONUNQUOTE(billLines, i, 'lastModifiedBy'), 100, LOOPJSONUNQUOTE(billLines, i, 'uuid')
+                    VALUES (@lineUuid, JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.userUuid')), JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.companyUuid')), @hdrUuid,
+                        JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].productName'))),
+                        JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].productDescription'))),
+                        JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].partNumber'))),
+                        JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].qty'))),
+                        JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].gst'))),
+                        JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].price'))),
+                        JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].uom'))),
+                        JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].taxableAmount'))),
+                        JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].tax'))),
+                        JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].discountAmt'))),
+                        JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].discountPer'))),
+                        createdOnDatetime,
+                        JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].createdBy'))),
+                        lastModifiedOnDateTime,
+                        JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].lastModifiedBy'))),
+                        100, JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].uuid')))
                     );
                     
                     SET @j = 0;
@@ -189,13 +197,13 @@ const BILLSAVE = {
                                 'productUuid', productUuid
                             )
                         ) AS json_result
-                        FROM stock s where s.companyUuid = JSONUNQUOTE(billObj, '$.companyUuid') and s.productUuid = LOOPJSONUNQUOTE(billLines, i, 'uuid') and s.stock > 0 order by createdOn asc
+                        FROM stock s where s.companyUuid = JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.companyUuid')) and s.productUuid = JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].uuid'))) and s.stock > 0 order by createdOn asc
                     ));
                     SET @stockLineLength = JSON_LENGTH(@stockLine);
-                    SET @totalQty = LOOPJSONUNQUOTE(billLines, i, 'qty');
+                    SET @totalQty = JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].qty')));
                     WHILE @j < @stockLineLength DO
-                        IF LOOPJSONUNQUOTE(billLines, i, 'uuid') = LOOPJSONUNQUOTE(@stockLine, @j, 'productUuid') THEN
-                            SET @stockCount = LOOPJSONUNQUOTE(@stockLine, @j, 'stock');
+                        IF JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].uuid'))) = JSON_UNQUOTE(JSON_EXTRACT(@stockLine, CONCAT('$[', @j, '].productUuid'))) THEN
+                            SET @stockCount = JSON_UNQUOTE(JSON_EXTRACT(@stockLine, CONCAT('$[', @j, '].stock')));
                             IF @stockCount > 0 THEN
                                 IF @stockCount > @totalQty THEN
                                     SET @stockCount = @stockCount - @totalQty;
@@ -204,7 +212,7 @@ const BILLSAVE = {
                                     SET @totalQty = @totalQty - @stockCount;
                                     SET @stockCount = @stockCount - @stockCount;                
                                 END IF;
-                                Update stock set stock = @stockCount where uuid = LOOPJSONUNQUOTE(@stockLine, @j, 'uuid');
+                                Update stock set stock = @stockCount where uuid = JSON_UNQUOTE(JSON_EXTRACT(@stockLine, CONCAT('$[', @j, '].uuid')));
                             END IF;
                         END IF;
                     SET @j = @j + 1;
