@@ -70,7 +70,7 @@ const product = {
         {field: 'productDescription', type: 'varchar(150)', null: 'DEFAULT NULL'},
         {field: 'partNumber', type: 'varchar(100)', null: 'NOT NULL'},
         {field: 'gst', type: 'DECIMAL(16,2)', null: 'DEFAULT NULL'},
-        {field: 'price', type: 'DECIMAL(16,2)', null: 'NOT NULL'},
+        {field: 'salePrice', type: 'DECIMAL(16,2)', null: 'NOT NULL'},
         {field: 'createdOn', type: 'datetime', null: 'NOT NULL'},
         {field: 'createdBy', type: 'varchar(50)', null: 'DEFAULT NULL'},
         {field: 'lastModifiedOn', type: 'datetime', null: 'DEFAULT NULL'},
@@ -93,7 +93,8 @@ const stock = {
         {field: 'createdOn', type: 'datetime', null: 'NOT NULL'},
         {field: 'createdBy', type: 'varchar(50)', null: 'DEFAULT NULL'},
         {field: 'lastModifiedOn', type: 'datetime', null: 'DEFAULT NULL'},
-        {field: 'lastModifiedBy', type: 'varchar(50)', null: 'DEFAULT NULL'}
+        {field: 'lastModifiedBy', type: 'varchar(50)', null: 'DEFAULT NULL'},
+        {field: 'purchasePrice', type: 'DECIMAL(16,2)', null: 'NOT NULL'}
     ]   
 }
 
@@ -147,7 +148,8 @@ const billlines = {
         {field: 'lastModifiedOn', type: 'datetime', null: 'DEFAULT NULL'},
         {field: 'lastModifiedBy', type: 'varchar(50)', null: 'DEFAULT NULL'},
         {field: 'status', type: 'varchar(50)', null: 'DEFAULT NULL'},
-        {field: 'productUuid', type: 'varchar(50)', null: 'NOT NULL'}
+        {field: 'productUuid', type: 'varchar(50)', null: 'NOT NULL'},
+        {field: 'salePrice', type: 'DECIMAL(16,2)', null: 'NOT NULL'}
     ]   
 }
 

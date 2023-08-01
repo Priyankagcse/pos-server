@@ -126,8 +126,8 @@ app.post("/product", (req, res) => {
 
 app.put("/product", (req, res) => {
     const putObj = req.body;
-    const sqlInsert = "UPDATE product SET productName = ?, productDescription = ?, partNumber = ?, gst = ?, price = ?, lastModifiedOn = ?, lastModifiedBy = ? WHERE uuid = ? and companyUuid = ?";
-    db.query(sqlInsert, [putObj.productName, putObj.productDescription, putObj.partNumber, putObj.gst, putObj.price, putObj.lastModifiedOn, putObj.lastModifiedBy, putObj.uuid, putObj.companyUuid], (err, result) => {
+    const sqlInsert = "UPDATE product SET productName = ?, productDescription = ?, partNumber = ?, gst = ?, salePrice = ?, lastModifiedOn = ?, lastModifiedBy = ? WHERE uuid = ? and companyUuid = ?";
+    db.query(sqlInsert, [putObj.productName, putObj.productDescription, putObj.partNumber, putObj.gst, putObj.salePrice, putObj.lastModifiedOn, putObj.lastModifiedBy, putObj.uuid, putObj.companyUuid], (err, result) => {
         if (err) {
             res.status(400).send({ message: err.sqlMessage });
         } else {
@@ -162,7 +162,7 @@ app.get("/productSearch/:companyUuid/:productName", (req, res) => {
 
 app.get("/productSearchWithStock/:companyUuid/:productName", (req, res) => {
     let reqParams = req.params;
-    const sqlInsert = `select p.*, sum(stock) as stock from product p join stock s on p.uuid = s.productUuid where p.companyUuid = '${reqParams.companyUuid}' and p.productName like '%${reqParams.productName}%' OR p.partNumber like '%${reqParams.productName}%' group by productuuid order by createdOn desc`;
+    const sqlInsert = `select p.*, sum(stock) as stock from product p join stock s on p.uuid = s.productUuid where p.companyUuid = '${reqParams.companyUuid}' and p.productName like '%${reqParams.productName}%' OR p.partNumber like '%${reqParams.productName}%' group by productuuid, purchasePrice order by createdOn desc`;
     db.query(sqlInsert, (err, result) => {
         if (err) {
             res.status(400).send({ message: err.sqlMessage });
@@ -174,7 +174,7 @@ app.get("/productSearchWithStock/:companyUuid/:productName", (req, res) => {
 
 app.get("/stock/:companyUuid", (req, res) => {
     let reqParams = req.params;
-    const sqlInsert = `SELECT s.*, p.productName, p.productDescription, p.partNumber, p.gst, p.price from stock s join product p on s.companyUuid = p.companyUuid and s.productUuid = p.uuid where p.companyUuid = '${reqParams.companyUuid}' and s.stock > 0 order by s.createdOn desc`;
+    const sqlInsert = `SELECT s.*, p.productName, p.productDescription, p.partNumber, p.gst, p.salePrice from stock s join product p on s.companyUuid = p.companyUuid and s.productUuid = p.uuid where p.companyUuid = '${reqParams.companyUuid}' and s.stock > 0 order by s.createdOn desc`;
     db.query(sqlInsert, (err, result) => {
         if (err) {
             res.status(400).send({ message: err.sqlMessage });
@@ -235,7 +235,7 @@ app.put("/stockBulkInsert", (req, res) => {
 
 app.put("/billSave", (req, res) => {
     let reqObj = req.body;
-    let totalAmount = reqObj.lines.reduce((prev, current) => prev + (+current.price || 0), 0);
+    let totalAmount = reqObj.lines.reduce((prev, current) => prev + (+current.amount || 0), 0);
     const putObj = {...reqObj, amount: totalAmount};
     const sqlInsert = `CALL billSave('${JSON.stringify(putObj)}')`;
     db.query(sqlInsert, (err, result) => {
@@ -243,6 +243,30 @@ app.put("/billSave", (req, res) => {
             res.status(400).send({ message: err.sqlMessage });
         } else {
             res.send({ data: result[0][0] });
+        }
+    });
+});
+
+app.get("/billHeaderHistory/:companyUuid", (req, res) => {
+    let reqParams = req.params;
+    const sqlInsert = `SELECT * from billheader bh where bh.companyUuid = '${reqParams.companyUuid}' order by createdOn desc`;
+    db.query(sqlInsert, (err, result) => {
+        if (err) {
+            res.status(400).send({ message: err.sqlMessage });
+        } else {
+            res.send({ data: result });
+        }
+    });
+});
+
+app.get("/billLinesHistory/:companyUuid/:hdrUuid", (req, res) => {
+    let reqParams = req.params;
+    const sqlInsert = `SELECT * from billlines bl where bl.companyUuid = '${reqParams.companyUuid}' and hdrUuid = '${reqParams.hdrUuid}' order by createdOn desc`;
+    db.query(sqlInsert, (err, result) => {
+        if (err) {
+            res.status(400).send({ message: err.sqlMessage });
+        } else {
+            res.send({ data: result });
         }
     });
 });

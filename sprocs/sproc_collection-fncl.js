@@ -41,12 +41,13 @@ const STOCKBULKINSERT = {
                         SET createdOnDatetime = NULL;
                     END IF;
                     
-                    INSERT INTO stock (uuid, userUuid, companyUuid, productUuid, uom, stock, isActive, createdOn, createdBy, lastModifiedOn, lastModifiedBy)
+                    INSERT INTO stock (uuid, userUuid, companyUuid, productUuid, uom, stock, isActive, createdOn, createdBy, lastModifiedOn, lastModifiedBy, purchasePrice)
                         VALUES (@uuid, JSONUNQUOTE(stockObj, '$.userUuid'), JSONUNQUOTE(stockObj, '$.companyUuid'),
                             JSONUNQUOTE(stockList, CONCAT('$[', i, '].uuid')), JSONUNQUOTE(stockList, CONCAT('$[', i, '].uom')),
                             JSONUNQUOTE(stockList, CONCAT('$[', i, '].stock')), 1, createdOnDatetime,
                             JSONUNQUOTE(stockList, CONCAT('$[', i, '].createdBy')), lastModifiedOnDateTime,
-                            JSONUNQUOTE(stockList, CONCAT('$[', i, '].lastModifiedBy')));
+                            JSONUNQUOTE(stockList, CONCAT('$[', i, '].lastModifiedBy')),
+                            JSONUNQUOTE(stockList, CONCAT('$[', i, '].purchasePrice')));
                     
                     SET i = i + 1;
                 END WHILE;
@@ -168,16 +169,17 @@ const BILLSAVE = {
                     END IF;
                                 
                     INSERT INTO billlines (uuid, userUuid, companyUuid, hdrUuid, productName, productDescription, partNumber, qty,
-                    gst, amount, uom, taxableAmount, tax, discountAmt, discountPer, createdOn, createdBy, lastModifiedOn, lastModifiedBy, status, productUuid)
+                    gst, amount, uom, taxableAmount, tax, discountAmt, discountPer, createdOn, createdBy, lastModifiedOn, lastModifiedBy, status, productUuid, salePrice)
                     VALUES (@lineUuid, JSONUNQUOTE(billObj, '$.userUuid'), JSONUNQUOTE(billObj, '$.companyUuid'), @hdrUuid,
                         LOOPJSONUNQUOTE(billLines, i, 'productName'), LOOPJSONUNQUOTE(billLines, i, 'productDescription'),
                         LOOPJSONUNQUOTE(billLines, i, 'partNumber'), LOOPJSONUNQUOTE(billLines, i, 'qty'),
-                        LOOPJSONUNQUOTE(billLines, i, 'gst'), LOOPJSONUNQUOTE(billLines, i, 'price'),
+                        LOOPJSONUNQUOTE(billLines, i, 'gst'), LOOPJSONUNQUOTE(billLines, i, 'amount'),
                         LOOPJSONUNQUOTE(billLines, i, 'uom'), LOOPJSONUNQUOTE(billLines, i, 'taxableAmount'),
                         LOOPJSONUNQUOTE(billLines, i, 'tax'), LOOPJSONUNQUOTE(billLines, i, 'discountAmt'),
                         LOOPJSONUNQUOTE(billLines, i, 'discountPer'), createdOnDatetime,
                         LOOPJSONUNQUOTE(billLines, i, 'createdBy'), lastModifiedOnDateTime,
-                        LOOPJSONUNQUOTE(billLines, i, 'lastModifiedBy'), 100, LOOPJSONUNQUOTE(billLines, i, 'uuid')
+                        LOOPJSONUNQUOTE(billLines, i, 'lastModifiedBy'), 100, LOOPJSONUNQUOTE(billLines, i, 'uuid'),
+                        LOOPJSONUNQUOTE(billLines, i, 'salePrice')
                     );
                     
                     SET @j = 0;
@@ -186,16 +188,17 @@ const BILLSAVE = {
                             JSON_OBJECT(
                                 'uuid', uuid,
                                 'stock', stock,
-                                'productUuid', productUuid
+                                'productUuid', productUuid,
+                                'purchasePrice', purchasePrice
                             )
                         ) AS json_result
                         FROM stock s where s.companyUuid = JSONUNQUOTE(billObj, '$.companyUuid') and s.productUuid = LOOPJSONUNQUOTE(billLines, i, 'uuid') and s.stock > 0 order by createdOn asc
                     ));
                     SET @stockLineLength = JSON_LENGTH(@stockLine);
-                    SET @totalQty = LOOPJSONUNQUOTE(billLines, i, 'qty');
+                    SET @totalQty = CAST(LOOPJSONUNQUOTE(billLines, i, 'qty') AS decimal(16, 2));
                     WHILE @j < @stockLineLength DO
                         IF LOOPJSONUNQUOTE(billLines, i, 'uuid') = LOOPJSONUNQUOTE(@stockLine, @j, 'productUuid') THEN
-                            SET @stockCount = LOOPJSONUNQUOTE(@stockLine, @j, 'stock');
+                            SET @stockCount = CAST(LOOPJSONUNQUOTE(@stockLine, @j, 'stock') AS decimal(16, 2));
                             IF @stockCount > 0 THEN
                                 IF @stockCount > @totalQty THEN
                                     SET @stockCount = @stockCount - @totalQty;

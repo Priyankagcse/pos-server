@@ -41,12 +41,13 @@ const STOCKBULKINSERT = {
                         SET createdOnDatetime = NULL;
                     END IF;
                     
-                    INSERT INTO stock (uuid, userUuid, companyUuid, productUuid, uom, stock, isActive, createdOn, createdBy, lastModifiedOn, lastModifiedBy)
+                    INSERT INTO stock (uuid, userUuid, companyUuid, productUuid, uom, stock, isActive, createdOn, createdBy, lastModifiedOn, lastModifiedBy, purchasePrice)
                         VALUES (@uuid, JSON_UNQUOTE(JSON_EXTRACT(stockObj, '$.userUuid')), JSON_UNQUOTE(JSON_EXTRACT(stockObj, '$.companyUuid')),
                             JSON_UNQUOTE(JSON_EXTRACT(stockList, CONCAT('$[', i, '].uuid'))), JSON_UNQUOTE(JSON_EXTRACT(stockList, CONCAT('$[', i, '].uom'))),
                             JSON_UNQUOTE(JSON_EXTRACT(stockList, CONCAT('$[', i, '].stock'))), 1, createdOnDatetime,
                             JSON_UNQUOTE(JSON_EXTRACT(stockList, CONCAT('$[', i, '].createdBy'))), lastModifiedOnDateTime,
-                            JSON_UNQUOTE(JSON_EXTRACT(stockList, CONCAT('$[', i, '].lastModifiedBy'))));
+                            JSON_UNQUOTE(JSON_EXTRACT(stockList, CONCAT('$[', i, '].lastModifiedBy'))),
+                            JSON_UNQUOTE(JSON_EXTRACT(stockList, CONCAT('$[', i, '].purchasePrice'))));
                     
                     SET i = i + 1;
                 END WHILE;
@@ -168,14 +169,14 @@ const BILLSAVE = {
                     END IF;
                                 
                     INSERT INTO billlines (uuid, userUuid, companyUuid, hdrUuid, productName, productDescription, partNumber, qty,
-                    gst, amount, uom, taxableAmount, tax, discountAmt, discountPer, createdOn, createdBy, lastModifiedOn, lastModifiedBy, status, productUuid)
+                    gst, amount, uom, taxableAmount, tax, discountAmt, discountPer, createdOn, createdBy, lastModifiedOn, lastModifiedBy, status, productUuid, salePrice)
                     VALUES (@lineUuid, JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.userUuid')), JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.companyUuid')), @hdrUuid,
                         JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].productName'))),
                         JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].productDescription'))),
                         JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].partNumber'))),
                         JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].qty'))),
                         JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].gst'))),
-                        JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].price'))),
+                        JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].amount'))),
                         JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].uom'))),
                         JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].taxableAmount'))),
                         JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].tax'))),
@@ -185,7 +186,8 @@ const BILLSAVE = {
                         JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].createdBy'))),
                         lastModifiedOnDateTime,
                         JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].lastModifiedBy'))),
-                        100, JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].uuid')))
+                        100, JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].uuid'))),
+                        JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].salePrice')))
                     );
                     
                     SET @j = 0;
@@ -194,16 +196,17 @@ const BILLSAVE = {
                             JSON_OBJECT(
                                 'uuid', uuid,
                                 'stock', stock,
-                                'productUuid', productUuid
+                                'productUuid', productUuid,
+                                'purchasePrice', purchasePrice
                             )
                         ) AS json_result
                         FROM stock s where s.companyUuid = JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.companyUuid')) and s.productUuid = JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].uuid'))) and s.stock > 0 order by createdOn asc
                     ));
                     SET @stockLineLength = JSON_LENGTH(@stockLine);
-                    SET @totalQty = JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].qty')));
+                    SET @totalQty = CAST(JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].qty'))) AS decimal(16, 2));
                     WHILE @j < @stockLineLength DO
                         IF JSON_UNQUOTE(JSON_EXTRACT(billLines, CONCAT('$[', i, '].uuid'))) = JSON_UNQUOTE(JSON_EXTRACT(@stockLine, CONCAT('$[', @j, '].productUuid'))) THEN
-                            SET @stockCount = JSON_UNQUOTE(JSON_EXTRACT(@stockLine, CONCAT('$[', @j, '].stock')));
+                            SET @stockCount = CAST(JSON_UNQUOTE(JSON_EXTRACT(@stockLine, CONCAT('$[', @j, '].stock'))) AS decimal(16, 2));
                             IF @stockCount > 0 THEN
                                 IF @stockCount > @totalQty THEN
                                     SET @stockCount = @stockCount - @totalQty;
