@@ -114,9 +114,6 @@ const BILLSAVE = {
                 DECLARE lastModifiedOnDateTime DATETIME;
                 DECLARE lastModifiedOnValue VARCHAR(50);
                 
-                DECLARE billDateTime DATETIME;
-                DECLARE billDateOnValue VARCHAR(50);
-                
                 DECLARE i int DEFAULT 0;
                 
                 DECLARE billLines JSON DEFAULT (JSON_EXTRACT(billObj, '$.lines'));
@@ -128,20 +125,13 @@ const BILLSAVE = {
                 
                 SET @billNumber = (SELECT count(*) from billheader);
                 
-                SET billDateOnValue = JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.billDate'));        
-                IF DATE(billDateOnValue) IS NOT NULL THEN
-                    SET billDateTime = STR_TO_DATE(billDateOnValue, '%Y-%m-%dT%H:%i:%s.000Z');
-                ELSE
-                    SET billDateTime = NULL;
-                END IF;
-                
                 INSERT INTO billheader (uuid, userUuid, companyUuid, billNumber, amount, taxableAmount, tax, customerName,
                     phoneNumber, address, billDate, discountAmt, discountPer, isActive, createdOn, createdBy, lastModifiedOn, lastModifiedBy, status)
                     VALUES (@hdrUuid, JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.userUuid')), JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.companyUuid')),
                         CONCAT('B', LPAD((@billNumber + 1), 3, '0')), JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.amount')),
                         JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.taxableAmount')), JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.tax')),
                         JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.customerName')), JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.phoneNumber')),
-                        JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.address')), billDateTime,
+                        JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.address')), JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.billDate')),
                         JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.discountAmt')), JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.discountPer')),
                         1, JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.createdOn')), JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.createdBy')),
                         JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.lastModifiedOn')), JSON_UNQUOTE(JSON_EXTRACT(billObj, '$.lastModifiedBy')),

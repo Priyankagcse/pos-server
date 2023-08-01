@@ -162,7 +162,7 @@ app.get("/productSearch/:companyUuid/:productName", (req, res) => {
 
 app.get("/productSearchWithStock/:companyUuid/:productName", (req, res) => {
     let reqParams = req.params;
-    const sqlInsert = `select p.*, sum(stock) as stock from product p join stock s on p.uuid = s.productUuid where p.companyUuid = '${reqParams.companyUuid}' and p.productName like '%${reqParams.productName}%' OR p.partNumber like '%${reqParams.productName}%' group by productuuid, purchasePrice order by createdOn desc`;
+    const sqlInsert = `select p.*, sum(stock) as stock, purchasePrice from product p join stock s on p.uuid = s.productUuid where p.companyUuid = '${reqParams.companyUuid}' and p.productName like '%${reqParams.productName}%' OR p.partNumber like '%${reqParams.productName}%' group by productuuid, purchasePrice order by createdOn desc`;
     db.query(sqlInsert, (err, result) => {
         if (err) {
             res.status(400).send({ message: err.sqlMessage });
