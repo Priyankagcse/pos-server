@@ -247,14 +247,14 @@ app.put("/billSave", (req, res) => {
     });
 });
 
-app.get("/billHeaderHistory/:companyUuid", (req, res) => {
-    let reqParams = req.params;
-    const sqlInsert = `SELECT * from billheader bh where bh.companyUuid = '${reqParams.companyUuid}' order by createdOn desc`;
+app.put("/billHeaderHistory", (req, res) => {
+    let reqObj = req.body;
+    const sqlInsert = `CALL billHeaderHistory('${JSON.stringify(reqObj)}')`;
     db.query(sqlInsert, (err, result) => {
         if (err) {
             res.status(400).send({ message: err.sqlMessage });
         } else {
-            res.send({ data: result });
+            res.send({ data: result[0] });
         }
     });
 });

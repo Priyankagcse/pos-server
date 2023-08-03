@@ -63,12 +63,12 @@ const GETPRODUCT = {
                 SET @endPageLimit = JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.endPageLimit'));
                 SET @maxRowLimit = JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.maxRowLimit'));
                 SET @caller = IFNULL(JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.caller')), '');
-                SET @searchText = IFNULL(concat('%', JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.searchText')), '%'), '');
+                SET @searchText = IFNULL(concat('%', LOWER(JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.searchText'))), '%'), '');
                 SET @sortColumn = concat(' ', IFNULL(JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.sortColumn')), ''));
                 SET @sortType = concat(' ', IFNULL(JSON_UNQUOTE(JSON_EXTRACT(productObj, '$.sortDirection')), ''));
                 
                 IF @caller = 'prodSearch' THEN
-                    SET @count = (select COUNT(uuid) as count from product p where p.companyUuid = @companyUuid and (p.productName like @searchText or p.partNumber like @searchText));
+                    SET @count = (select COUNT(uuid) as count from product p where p.companyUuid = @companyUuid and (LOWER(p.productName) like @searchText or LOWER(p.partNumber) like @searchText));
                 ELSE
                     SET @count = (select COUNT(uuid) as count from product p where p.companyUuid = @companyUuid);
                 END IF;
@@ -76,7 +76,7 @@ const GETPRODUCT = {
                 IF @count > @maxRowLimit THEN
                     SET @pagination = 1;
                     IF @caller = 'prodSearch' THEN
-                        SET @query = CONCAT('SELECT * FROM product p where p.companyUuid = ? and (p.productName like ? or p.partNumber like ?) order by createdOn desc LIMIT ', @startPageLimit, ', ', @endPageLimit);
+                        SET @query = CONCAT('SELECT * FROM product p where p.companyUuid = ? and (LOWER(p.productName) like ? or LOWER(p.partNumber) like ?) order by createdOn desc LIMIT ', @startPageLimit, ', ', @endPageLimit);
                     ELSEIF @caller = 'sort' THEN
                         SET @query = CONCAT('SELECT * FROM product p where p.companyUuid = ? order by ', @sortColumn, @sortType, ' LIMIT ', @startPageLimit, ', ', @endPageLimit);
                     ELSE
@@ -85,7 +85,7 @@ const GETPRODUCT = {
                 ELSE
                     SET @pagination = 0;
                     IF @caller = 'prodSearch' THEN
-                        SET @query = CONCAT('SELECT * FROM product p where p.companyUuid = ? and (p.productName like ? or p.partNumber like ?) order by createdOn desc');
+                        SET @query = CONCAT('SELECT * FROM product p where p.companyUuid = ? and (LOWER(p.productName) like ? or LOWER(p.partNumber) like ?) order by createdOn desc');
                     ELSEIF @caller = 'sort' THEN
                         SET @query = CONCAT('SELECT * FROM product p where p.companyUuid = ? order by ', @sortColumn, @sortType);
                     ELSE
@@ -215,11 +215,31 @@ const BILLSAVE = {
             END`
 }
 
+const BILLHEADERHISTORY = {
+    name: 'BILLHEADERHISTORY',
+    query: `CREATE PROCEDURE billHeaderHistory(IN billHistoryObj JSON)
+            BEGIN
+                SET @companyUuid = JSON_UNQUOTE(JSON_EXTRACT(billHistoryObj, '$.companyUuid'));
+                SET @fromDate = IFNULL(JSON_UNQUOTE(JSON_EXTRACT(billHistoryObj, '$.fromDate')), '');
+                SET @toDate = IFNULL(JSON_UNQUOTE(JSON_EXTRACT(billHistoryObj, '$.toDate')), '');
+                SET @customerName = IFNULL(concat('%', LOWER(JSON_UNQUOTE(JSON_EXTRACT(billHistoryObj, '$.customerName'))), '%'), '');
+                SET @billNo = IFNULL(concat('%', LOWER(JSON_UNQUOTE(JSON_EXTRACT(billHistoryObj, '$.billNo'))), '%'), '');
+                
+                SELECT * from billheader bh
+                    where bh.companyUuid = @companyUuid and
+                        -- ((STR_TO_DATE(bh.billDate, '%Y-%m-%d') BETWEEN STR_TO_DATE(@fromDate, '%Y-%m-%d') AND STR_TO_DATE(@toDate, '%Y-%m-%d')) OR
+                        ((bh.billDate BETWEEN @fromDate AND @toDate) OR
+                        (LOWER(bh.customerName) like @customerName or LOWER(bh.billNumber) like @billNo))
+                    order by createdOn desc;
+            END`
+}
+
 const all_store_procedure = [
     INITIALREFRESH,
     STOCKBULKINSERT,
     GETPRODUCT,
-    BILLSAVE
+    BILLSAVE,
+    BILLHEADERHISTORY
 ]
 
 module.exports = all_store_procedure
