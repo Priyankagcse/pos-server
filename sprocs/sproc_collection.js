@@ -220,17 +220,47 @@ const BILLHEADERHISTORY = {
     query: `CREATE PROCEDURE billHeaderHistory(IN billHistoryObj JSON)
             BEGIN
                 SET @companyUuid = JSON_UNQUOTE(JSON_EXTRACT(billHistoryObj, '$.companyUuid'));
-                SET @fromDate = IFNULL(JSON_UNQUOTE(JSON_EXTRACT(billHistoryObj, '$.fromDate')), '');
-                SET @toDate = IFNULL(JSON_UNQUOTE(JSON_EXTRACT(billHistoryObj, '$.toDate')), '');
-                SET @customerName = IFNULL(concat('%', LOWER(JSON_UNQUOTE(JSON_EXTRACT(billHistoryObj, '$.customerName'))), '%'), '');
-                SET @billNo = IFNULL(concat('%', LOWER(JSON_UNQUOTE(JSON_EXTRACT(billHistoryObj, '$.billNo'))), '%'), '');
+                SET @fromDate = JSON_UNQUOTE(JSON_EXTRACT(billHistoryObj, '$.fromDate'));
+                SET @toDate = JSON_UNQUOTE(JSON_EXTRACT(billHistoryObj, '$.toDate'));
+                SET @customerName = IFNULL(LOWER(JSON_UNQUOTE(JSON_EXTRACT(billHistoryObj, '$.customerName'))), '');
+                SET @billNo = IFNULL(LOWER(JSON_UNQUOTE(JSON_EXTRACT(billHistoryObj, '$.billNo'))), '');
                 
-                SELECT * from billheader bh
-                    where bh.companyUuid = @companyUuid and
-                        -- ((STR_TO_DATE(bh.billDate, '%Y-%m-%d') BETWEEN STR_TO_DATE(@fromDate, '%Y-%m-%d') AND STR_TO_DATE(@toDate, '%Y-%m-%d')) OR
-                        ((bh.billDate BETWEEN @fromDate AND @toDate) OR
-                        (LOWER(bh.customerName) like @customerName or LOWER(bh.billNumber) like @billNo))
-                    order by createdOn desc;
+                SET @sqlQuery = concat('SELECT * from billheader where companyUuid = ''', @companyUuid, '''');
+                
+                IF DATE(@fromDate) IS NOT NULL AND DATE(@toDate) IS NOT NULL THEN
+                    SET @sqlQuery = concat(@sqlQuery, ' AND (billDate BETWEEN ''', @fromDate, ''' AND ''', @toDate, ''')');
+                ELSE
+                    IF DATE(@fromDate) IS NOT NULL THEN
+                        SET @sqlQuery = concat(@sqlQuery, ' AND billDate >= ''', @fromDate, '''');
+                    END IF;
+                    IF DATE(@toDate) IS NOT NULL THEN
+                        SET @sqlQuery = concat(@sqlQuery, ' AND billDate <= ''', @toDate, '''');
+                    END IF;
+                END IF;
+                
+                IF @customerName IS NOT NULL AND @customerName <> '' THEN
+                    SET @concatCust = CONCAT('%', @customerName, '%');
+                    SET @sqlQuery = concat(@sqlQuery, ' AND LOWER(customerName) like ? ');
+                END IF;
+                
+                IF @billNo IS NOT NULL AND @billNo <> '' THEN
+                    SET @concatBillNo = CONCAT('%', @billNo, '%');
+                    SET @sqlQuery = concat(@sqlQuery, ' AND LOWER(billNumber) like ? ');
+                END IF;
+                
+                SET @sqlQuery = concat(@sqlQuery, ' order by createdOn desc');
+                
+                PREPARE stmt FROM @sqlQuery;
+                IF @customerName IS NOT NULL AND @customerName <> '' AND @billNo IS NOT NULL AND @billNo <> '' THEN
+                    EXECUTE stmt USING @concatCust, @concatBillNo;
+                ELSEIF @customerName IS NOT NULL AND @customerName <> '' THEN
+                    EXECUTE stmt USING @concatCust;
+                ELSEIF @billNo IS NOT NULL AND @billNo <> '' THEN
+                    EXECUTE stmt USING @concatBillNo;
+                ELSE
+                    EXECUTE stmt;
+                END IF;
+                DEALLOCATE PREPARE stmt;
             END`
 }
 
