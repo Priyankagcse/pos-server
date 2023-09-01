@@ -172,6 +172,18 @@ app.get("/productSearchWithStock/:companyUuid/:productName", (req, res) => {
     });
 });
 
+app.get("/getAllProducts/:companyUuid", (req, res) => {
+    let reqParams = req.params;
+    const sqlInsert = `select p.*, sum(stock) as stock, purchasePrice from product p join stock s on p.uuid = s.productUuid where p.companyUuid = '${reqParams.companyUuid}' group by productuuid`;
+    db.query(sqlInsert, (err, result) => {
+        if (err) {
+            res.status(400).send({ message: err.sqlMessage });
+        } else {
+            res.send({ data: result });
+        }
+    });
+});
+
 app.get("/stock/:companyUuid", (req, res) => {
     let reqParams = req.params;
     const sqlInsert = `SELECT s.*, p.productName, p.productDescription, p.partNumber, p.gst, p.salePrice from stock s join product p on s.companyUuid = p.companyUuid and s.productUuid = p.uuid where p.companyUuid = '${reqParams.companyUuid}' and s.stock > 0 order by s.createdOn desc`;
